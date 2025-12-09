@@ -437,6 +437,10 @@ export interface RoomLayout {
   ceilingHeight: number;
   confidence: number; // 0.0 - 1.0 (Tier 4 ~0.4, Tier 3 ~0.8, Tier 2 ~0.98)
   source: 'heuristic' | 'vision_floor_plan' | 'user_measured' | 'lidar';
+  // Optional fields populated by vision extraction
+  id?: string;
+  name?: string;
+  type?: string;
 }
 
 // ═══════════════════════════════════════════════════════════════
