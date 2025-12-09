@@ -12,11 +12,14 @@ export default defineConfig(({ mode }) => {
       plugins: [react()],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+        'import.meta.env.VITE_FIRECRAWL_API_KEY': JSON.stringify(env.FIRECRAWL_API_KEY),
       },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, './src'),
+          '@remodelvision/ui': path.resolve(__dirname, '../../packages/ui/src/index.ts'),
+          '@remodelvision/sdk': path.resolve(__dirname, '../../packages/sdk/src/index.ts'),
         }
       }
     };

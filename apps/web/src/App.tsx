@@ -8,6 +8,9 @@ import { PropertyIntelligence } from './components/workspace/PropertyIntelligenc
 import { useStore } from './store/useStore';
 import { AppViewMode } from './types';
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
+import { AppShell } from './components/layout/AppShell';
+import { WorkspaceLayout } from './components/layout/WorkspaceLayout';
+import { cn } from '@remodelvision/ui';
 
 interface ToastProps {
   type: 'success' | 'error' | 'info';
@@ -20,7 +23,7 @@ const Toast: React.FC<ToastProps> = ({ type, message, onClose }) => {
   const Icon = type === 'success' ? CheckCircle2 : type === 'error' ? AlertCircle : Info;
 
   return (
-    <div className={`${bg} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 min-w-[300px] animate-in slide-in-from-bottom-5 fade-in duration-300`}>
+    <div className={cn(bg, "text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 min-w-[300px] animate-in slide-in-from-bottom-5 fade-in duration-300")}>
       <Icon className="w-5 h-5" />
       <span className="text-sm font-medium flex-1">{message}</span>
       <button onClick={onClose} className="hover:bg-white/20 p-1 rounded">
@@ -34,38 +37,34 @@ function App() {
   const { selectedRoom, notifications, removeNotification, viewMode, workspaceView } = useStore();
 
   return (
-    <div className="flex h-screen w-screen bg-slate-950 text-white overflow-hidden font-sans">
-      
+    <AppShell>
       {viewMode === AppViewMode.DASHBOARD ? (
         <Dashboard />
       ) : (
-        <>
-          {/* Main Content Area - Swaps based on WorkspaceView */}
-          <div className="flex-1 relative bg-slate-900 overflow-hidden">
-            {workspaceView === 'DESIGN' && (
-              <>
-                <DollhouseViewer />
-                {/* Floating HUD info for design mode */}
-                {selectedRoom && (
-                  <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur border border-slate-700 px-6 py-3 rounded-full shadow-2xl pointer-events-none flex items-center gap-3 z-10">
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Selected</span>
-                    <p className="text-sm font-bold text-white border-l border-slate-700 pl-3">{selectedRoom}</p>
-                  </div>
-                )}
-              </>
-            )}
-            
-            {workspaceView === 'SETTINGS' && <ProjectSettingsPage />}
-            {workspaceView === 'INTELLIGENCE' && <PropertyIntelligence />}
-          </div>
-
-          {/* Right Sidebar - Persistent */}
-          <Sidebar />
-
-          {/* Full Screen Overlay for Results */}
-          <ResultOverlay />
-        </>
+        <WorkspaceLayout
+          mainContent={
+            <>
+              {workspaceView === 'DESIGN' && (
+                <>
+                  <DollhouseViewer />
+                  {/* Floating HUD info for design mode */}
+                  {selectedRoom && (
+                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur border border-slate-700 px-6 py-3 rounded-full shadow-2xl pointer-events-none flex items-center gap-3 z-10">
+                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                      <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Selected</span>
+                      <p className="text-sm font-bold text-white border-l border-slate-700 pl-3">{selectedRoom}</p>
+                    </div>
+                  )}
+                </>
+              )}
+              
+              {workspaceView === 'SETTINGS' && <ProjectSettingsPage />}
+              {workspaceView === 'INTELLIGENCE' && <PropertyIntelligence />}
+            </>
+          }
+          sidebar={<Sidebar />}
+          overlay={<ResultOverlay />}
+        />
       )}
 
       {/* Global Toast Container */}
@@ -79,7 +78,7 @@ function App() {
           />
         ))}
       </div>
-    </div>
+    </AppShell>
   );
 }
 

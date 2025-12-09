@@ -2,14 +2,23 @@
   "name": "remodel-vision-monorepo",
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter @remodel-vision/web dev",
+    "dev": "pnpm --filter @remodelvision/web dev",
     "build": "pnpm -r build",
+    "build:web": "pnpm --filter @remodelvision/web build",
+    "build:sdk": "pnpm --filter @remodelvision/sdk build",
+    "build:mcp": "pnpm --filter @remodelvision/mcp-server build",
     "lint": "pnpm -r lint",
-    "test": "pnpm -r test"
+    "test": "pnpm -r test",
+    "type-check": "pnpm -r type-check",
+    "clean": "pnpm -r exec rm -rf dist node_modules",
+    "vercel:deploy": "pnpm --filter @remodelvision/web vercel",
+    "vercel:prod": "pnpm --filter @remodelvision/web vercel --prod"
   },
   "devDependencies": {
     "typescript": "~5.8.2"
   },
-  "packageManager": "pnpm@9.15.0"
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20.0.0"
+  }
 }
-

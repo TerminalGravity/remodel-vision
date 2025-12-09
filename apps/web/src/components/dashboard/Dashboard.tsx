@@ -2,6 +2,7 @@ import React from 'react';
 import { useStore } from '../../store/useStore';
 import { MapPin, Calendar, ArrowRight, Plus, Search, MoreVertical, LayoutGrid, List } from 'lucide-react';
 import { Project } from '../../types';
+import { Button, Card } from '@remodelvision/ui';
 
 export const Dashboard = () => {
   const { projects, setActiveProject } = useStore();
@@ -44,10 +45,10 @@ export const Dashboard = () => {
               <h1 className="text-3xl font-bold text-white mb-2">Projects</h1>
               <p className="text-slate-400">Manage your renovation properties and workspaces.</p>
             </div>
-            <button className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-lg flex items-center gap-2 font-medium transition-all shadow-lg shadow-blue-900/20">
+            <Button className="gap-2 shadow-lg shadow-blue-900/20">
               <Plus className="w-4 h-4" />
               New Project
-            </button>
+            </Button>
           </div>
 
           {/* Map / Visualization Area (Stylized) */}
@@ -112,9 +113,9 @@ interface ProjectCardProps {
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, onOpen }) => {
   return (
-    <div 
+    <Card 
       onClick={onOpen}
-      className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden hover:border-slate-600 transition-all cursor-pointer group hover:shadow-2xl hover:shadow-blue-900/10 flex flex-col"
+      className="overflow-hidden hover:border-slate-600 transition-all cursor-pointer group hover:shadow-2xl hover:shadow-blue-900/10 flex flex-col h-full bg-slate-900 border-slate-800"
     >
       <div className="h-40 overflow-hidden relative">
         <img 
@@ -159,6 +160,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onOpen }) => {
            </span>
         </div>
       </div>
-    </div>
+    </Card>
   );
 };

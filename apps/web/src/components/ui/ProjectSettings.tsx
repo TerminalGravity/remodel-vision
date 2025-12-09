@@ -17,7 +17,7 @@ export const ProjectSettings = ({ onClose }: { onClose: () => void }) => {
   if (!project) return null;
 
   const handleSave = () => {
-    updateProjectConfig(activeProjectId, config);
+    updateProjectConfig(activeProjectId, config as any);
     addNotification('success', 'Project configuration updated');
     onClose();
   };
@@ -78,8 +78,7 @@ export const ProjectSettings = ({ onClose }: { onClose: () => void }) => {
               </label>
               <select 
                 value={config.budget}
-                // @ts-ignore
-                onChange={(e) => setConfig({...config, budget: e.target.value})}
+                onChange={(e) => setConfig({...config, budget: e.target.value as any})}
                 className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:border-blue-500 focus:outline-none appearance-none"
               >
                 <option value="Economy">Economy</option>

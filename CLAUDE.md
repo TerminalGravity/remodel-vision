@@ -4,66 +4,115 @@
 Property remodeling visualization platform with AI-powered 3D rendering, image generation, and context-aware design assistance.
 
 **Owner**: Jack Felke (Property Investor persona - multi-project focus)
-**Goal**: Ship fast AF - personal tool + product
+**Goal**: Ship fast AF - personal tool + product + **platform**
 
 ## Tech Stack (Ship Fast)
 ```
 Frontend:     React 19 + TypeScript + Vite
 3D:           Three.js + @react-three/fiber + @react-three/drei
 State:        Zustand (client) + Supabase (server)
-AI:           Google Gemini (full family) + Nano Banana Pro
+AI:           Google Gemini (full family) + Nano Banana Pro (Imagen 3)
 Backend:      Supabase (Auth, DB, Storage, Edge Functions)
 Hosting:      Vercel (Frontend + API Routes)
 Data:         Firecrawl API (property scraping)
+Platform:     MCP Server + SDK for third-party integrations
 ```
 
-## Directory Structure
+## Monorepo Structure
 ```
 /
-├── src/
-│   ├── components/       # React components
-│   │   ├── 3d/          # Three.js scene components
-│   │   ├── ui/          # Shadcn/UI components
-│   │   └── workspace/   # Main workspace views
-│   ├── services/        # API integrations
-│   │   ├── gemini/      # Gemini AI service
-│   │   ├── supabase/    # Supabase client + hooks
-│   │   ├── firecrawl/   # Property data scraping
-│   │   └── nanoBanana/  # Image generation
-│   ├── store/           # Zustand stores
-│   ├── hooks/           # Custom React hooks
-│   ├── types/           # TypeScript definitions
-│   ├── lib/             # Utilities + helpers
-│   └── api/             # Vercel API routes (if needed)
+├── apps/
+│   └── web/                 # Main React app (@remodelvision/web)
+│       ├── src/
+│       │   ├── components/  # React components
+│       │   ├── services/    # API integrations
+│       │   ├── store/       # Zustand stores
+│       │   ├── hooks/       # Custom hooks
+│       │   └── types/       # TypeScript definitions
+│       ├── index.html
+│       └── vite.config.ts
+│
+├── packages/
+│   ├── sdk/                 # JavaScript/TypeScript SDK (@remodelvision/sdk)
+│   │   └── src/
+│   │       ├── client.ts    # API client
+│   │       ├── types.ts     # Shared types
+│   │       └── index.ts     # Exports
+│   │
+│   └── mcp-server/          # MCP Server (@remodelvision/mcp-server)
+│       └── src/
+│           └── index.ts     # MCP tool definitions
+│
 ├── supabase/
-│   ├── migrations/      # SQL migrations
-│   ├── functions/       # Edge Functions
-│   └── seed.sql         # Dev seed data
-├── public/              # Static assets
-└── .taskmaster/         # Project docs + tasks
+│   ├── migrations/          # SQL migrations
+│   ├── functions/           # Edge Functions
+│   └── seed.sql             # Dev seed data
+│
+├── .taskmaster/
+│   ├── docs/                # PRDs and Personas
+│   └── tasks/               # Task definitions
+│
+└── .claude/
+    ├── commands/            # Custom slash commands
+    └── settings.local.json  # Claude Code permissions
 ```
 
 ## Critical Commands
 ```bash
-# Development
-pnpm dev                 # Start dev server
-pnpm build              # Production build
-pnpm preview            # Preview prod build
+# Development (from root)
+pnpm dev                     # Start web app dev server
+pnpm build                   # Build all packages
+pnpm build:web              # Build web app only
+pnpm build:sdk              # Build SDK only
+pnpm build:mcp              # Build MCP server only
 
-# Supabase
-pnpm supabase:start     # Local Supabase
-pnpm supabase:gen       # Generate types
-pnpm supabase:push      # Push migrations
-pnpm supabase:pull      # Pull remote changes
+# From apps/web/
+cd apps/web && pnpm dev      # Direct dev server
+
+# Supabase (from apps/web)
+pnpm supabase:start          # Local Supabase
+pnpm supabase:gen            # Generate types
+pnpm supabase:push           # Push migrations
 
 # Deployment
-pnpm vercel             # Deploy preview
-pnpm vercel --prod      # Deploy production
+pnpm vercel:deploy           # Deploy preview
+pnpm vercel:prod             # Deploy production
 
 # Taskmaster
-task list               # Show tasks
-task next               # Get next task
-task set-status <id> done  # Complete task
+task list                    # Show tasks
+task next                    # Get next task
+task set-status <id> done    # Complete task
+```
+
+## Platform API (PRD-010)
+
+### MCP Tools (for AI Agents)
+```
+remodelvision_analyze_property   # Extract property context from address/listing
+remodelvision_generate_design    # Create AI design visualizations
+remodelvision_estimate_cost      # Get renovation cost breakdowns
+remodelvision_compare_options    # Compare design alternatives
+remodelvision_get_contractor_specs  # Generate professional specs
+```
+
+### SDK Usage
+```typescript
+import { RemodelVision } from '@remodelvision/sdk';
+
+const rv = new RemodelVision({ apiKey: '...' });
+
+// Analyze property
+const property = await rv.properties.analyze({
+  address: '123 Main St, Austin TX'
+});
+
+// Generate design
+const design = await rv.designs.generate({
+  propertyId: property.id,
+  space: 'kitchen',
+  style: 'modern-farmhouse',
+  budgetTier: 'premium'
+});
 ```
 
 ## Coding Standards
@@ -72,42 +121,24 @@ task set-status <id> done  # Complete task
 - **Strict mode always** - no `any` types
 - Use Zod for runtime validation at boundaries
 - Prefer `interface` for objects, `type` for unions/primitives
-- Export types from `src/types/` barrel file
+- Shared types go in `packages/sdk/src/types.ts`
+- App-specific types in `apps/web/src/types/`
 
 ### React Patterns
 ```typescript
 // Prefer function components with explicit return types
 export function PropertyCard({ property }: PropertyCardProps): React.ReactElement {
-  // Use early returns for loading/error states
   if (!property) return <Skeleton />;
-
   return <Card>...</Card>;
 }
 
 // Zustand store pattern
 export const usePropertyStore = create<PropertyStore>()((set, get) => ({
-  // State
   properties: [],
   activeProperty: null,
-
-  // Actions - prefix with verb
   setActiveProperty: (id) => set({ activeProperty: id }),
   fetchProperties: async () => { ... },
 }));
-```
-
-### Supabase Patterns
-```typescript
-// Always use generated types
-import type { Database } from '@/types/supabase';
-type Property = Database['public']['Tables']['properties']['Row'];
-
-// Use hooks for data fetching
-const { data, error, isLoading } = useQuery(['property', id], () =>
-  supabase.from('properties').select('*').eq('id', id).single()
-);
-
-// RLS policies handle auth - trust them
 ```
 
 ### AI Integration
@@ -148,8 +179,8 @@ GOOGLE_CLOUD_PROJECT=
 # Firecrawl
 FIRECRAWL_API_KEY=
 
-# Vercel (auto-injected)
-VERCEL_URL=
+# RemodelVision API (for SDK/MCP testing)
+REMODELVISION_API_KEY=
 ```
 
 ## Database Schema (Supabase)
@@ -161,26 +192,33 @@ measurements      -- Room dimensions, features
 projects          -- User projects (multi-property)
 design_versions   -- Generated designs with history
 user_preferences  -- Style, budget, saved materials
+api_keys          -- Developer API keys
+usage_logs        -- API usage tracking
 ```
 
 ## Taskmaster Integration
 - PRDs in `.taskmaster/docs/PRD-*.md`
 - Personas in `.taskmaster/docs/PERSONA-*.md`
 - Tasks in `.taskmaster/tasks/tasks.json`
-- Use `task` CLI or MCP tools for management
 
-### Task Workflow
-1. `task next` - Get highest priority pending task
-2. Implement the task
-3. `task set-status <id> done` - Mark complete
-4. Repeat
+### Key PRDs
+| PRD | Focus |
+|-----|-------|
+| PRD-000 | Master Vision & Architecture |
+| PRD-001 | Property Context Intelligence |
+| PRD-002 | 3D Dollhouse & Spatial Computing |
+| PRD-003 | Gemini AI Integration |
+| PRD-004 | Image Generation (Nano Banana Pro) |
+| PRD-005 | Source Document Processing |
+| PRD-008 | Data Structures & Schema |
+| PRD-010 | **API & MCP Platform Strategy** |
 
 ## Shipping Philosophy
 1. **Working > Perfect** - Ship incrementally
 2. **Context is King** - PropertyContext drives everything
 3. **AI-First** - Let Gemini do heavy lifting
 4. **Type Safety** - Catch errors at compile time
-5. **Edge Functions** - Keep backend thin, use Supabase
+5. **Platform Thinking** - Build for extensibility
 
 ## Common Patterns
 
@@ -192,6 +230,7 @@ User enters address
     → Data merged into PropertyContext
     → Stored in Supabase
     → Drives 3D scene + AI prompts
+    → Available via API/MCP for third parties
 ```
 
 ### Image Generation Flow
@@ -202,6 +241,7 @@ User requests design
     → Generate via Nano Banana Pro
     → Store version in Supabase Storage
     → Display in comparison view
+    → Expose via API for integrations
 ```
 
 ## Don't
@@ -210,6 +250,7 @@ User requests design
 - Don't skip TypeScript types
 - Don't hardcode API keys
 - Don't ignore Supabase RLS
+- Don't break the SDK/MCP contract
 
 ## Do
 - Do use Supabase for everything backend
@@ -217,3 +258,4 @@ User requests design
 - Do use Taskmaster to track progress
 - Do deploy frequently to Vercel
 - Do commit working code often
+- Do keep SDK types in sync with API responses

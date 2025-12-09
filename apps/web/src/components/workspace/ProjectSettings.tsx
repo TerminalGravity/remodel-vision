@@ -31,7 +31,7 @@ export const ProjectSettingsPage = () => {
     });
 
     // Update specific AI config
-    updateProjectConfig(activeProjectId, config);
+    updateProjectConfig(activeProjectId, config as any);
     
     addNotification('success', 'Workspace configuration saved successfully');
   };

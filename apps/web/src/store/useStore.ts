@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { ChatMessage, AppStatus, GeneratedResult, Project, Notification, AppViewMode, PropertyMeta, WorkspaceView } from '../types';
 import { geminiService } from '../services/geminiService';
+import { fetchPropertyData, isPropertyServiceAvailable } from '../services/property';
+import type { PropertyContext } from '../types/property';
 
 interface AppState {
   // Navigation
@@ -18,8 +20,13 @@ interface AppState {
   
   // Real Property Data
   activePropertyMeta: PropertyMeta | null;
+  activePropertyContext: PropertyContext | null;
+  propertyFetchStatus: 'idle' | 'loading' | 'success' | 'error';
+  propertyFetchErrors: Array<{ source: string; error: string }>;
   fetchPropertyMeta: (address: string) => Promise<void>;
+  fetchPropertyContext: (address: string) => Promise<void>;
   updatePropertyMeta: (meta: PropertyMeta) => void;
+  updatePropertyContext: (context: PropertyContext) => void;
 
   // Chat & AI State
   messages: ChatMessage[];
@@ -126,14 +133,22 @@ export const useStore = create<AppState>((set, get) => ({
       projectContext: "",
       modelUrl: null,
       lastGeneratedResult: null,
-      activePropertyMeta: null // Reset while fetching
+      activePropertyMeta: null, // Reset while fetching
+      activePropertyContext: null,
+      propertyFetchStatus: 'idle',
+      propertyFetchErrors: []
     });
-    
+
     get().addNotification('info', `Opened workspace: ${project?.name}`);
-    
-    // Auto-fetch property details
+
+    // Auto-fetch property details using new Firecrawl service if available
     if (project?.config.location.address) {
-      get().fetchPropertyMeta(project.config.location.address);
+      if (isPropertyServiceAvailable()) {
+        get().fetchPropertyContext(project.config.location.address);
+      } else {
+        // Fall back to Gemini-based estimation
+        get().fetchPropertyMeta(project.config.location.address);
+      }
     }
   },
 
@@ -154,19 +169,103 @@ export const useStore = create<AppState>((set, get) => ({
   })),
 
   activePropertyMeta: null,
+  activePropertyContext: null,
+  propertyFetchStatus: 'idle',
+  propertyFetchErrors: [],
+
   fetchPropertyMeta: async (address) => {
     try {
       const meta = await geminiService.getPropertyDetails(address);
       set({ activePropertyMeta: meta });
       get().addMessage({
         role: 'system',
-        content: `**Property Intelligence Loaded**\nZoning: ${meta.zoning}\nYear Built: ${meta.yearBuilt}\nLot: ${meta.lotSize}`
+        content: `**Property Intelligence Loaded** (AI Estimated)\nZoning: ${meta.zoning}\nYear Built: ${meta.yearBuilt}\nLot: ${meta.lotSize}`
       });
     } catch (e) {
       console.error(e);
     }
   },
+
+  fetchPropertyContext: async (address) => {
+    set({ propertyFetchStatus: 'loading', propertyFetchErrors: [] });
+    get().addMessage({
+      role: 'system',
+      content: `🔍 **Fetching Property Data**\nSearching Zillow, Redfin, and county records for:\n${address}`
+    });
+
+    try {
+      const result = await fetchPropertyData(address);
+
+      if (result.success && result.property) {
+        const prop = result.property;
+
+        // Convert to legacy PropertyMeta for backwards compatibility
+        const legacyMeta: PropertyMeta = {
+          zoning: prop.regulatory?.zoning || 'Unknown',
+          lotSize: prop.details?.lotSize
+            ? `${prop.details.lotSize.value} ${prop.details.lotSize.unit}`
+            : 'Unknown',
+          yearBuilt: prop.details?.yearBuilt?.toString() || 'Unknown',
+          sunExposure: prop.location?.orientation
+            ? `${prop.location.orientation}-Facing`
+            : 'Variable',
+          schoolDistrict: prop.neighborhood?.schoolDistrict || 'Unknown',
+          walkScore: prop.neighborhood?.walkScore || 50
+        };
+
+        set({
+          activePropertyContext: prop,
+          activePropertyMeta: legacyMeta,
+          propertyFetchStatus: 'success',
+          propertyFetchErrors: result.errors
+        });
+
+        // Build detailed status message
+        const sources = prop.sources?.map(s => s.source).join(', ') || 'multiple sources';
+        const completeness = prop.metadata?.completeness || 0;
+
+        get().addMessage({
+          role: 'system',
+          content: `**Property Intelligence Loaded** ✅\n` +
+            `📍 ${prop.address?.formatted || address}\n` +
+            `🏠 ${prop.details?.bedrooms || 0} bed, ${prop.details?.bathrooms || 0} bath | ${prop.details?.livingArea?.value || 0} sqft\n` +
+            `📅 Built ${prop.details?.yearBuilt || 'Unknown'}\n` +
+            `🏛️ Zoning: ${prop.regulatory?.zoning || 'Unknown'}\n` +
+            `💰 Est. Value: $${(prop.valuation?.marketEstimate || 0).toLocaleString()}\n` +
+            `🚶 Walk Score: ${prop.neighborhood?.walkScore || 'N/A'}\n\n` +
+            `_Data from ${sources} (${completeness}% complete)_`
+        });
+
+        if (result.errors.length > 0) {
+          get().addNotification('info', `Some sources unavailable: ${result.errors.map(e => e.source).join(', ')}`);
+        }
+      } else {
+        set({
+          propertyFetchStatus: 'error',
+          propertyFetchErrors: result.errors
+        });
+
+        // Fall back to Gemini estimation
+        get().addMessage({
+          role: 'system',
+          content: `⚠️ **Web Scraping Unavailable**\nFalling back to AI estimation...`
+        });
+        get().fetchPropertyMeta(address);
+      }
+    } catch (error) {
+      console.error('Property fetch error:', error);
+      set({
+        propertyFetchStatus: 'error',
+        propertyFetchErrors: [{ source: 'system', error: String(error) }]
+      });
+
+      // Fall back to Gemini estimation
+      get().fetchPropertyMeta(address);
+    }
+  },
+
   updatePropertyMeta: (meta) => set({ activePropertyMeta: meta }),
+  updatePropertyContext: (context) => set({ activePropertyContext: context }),
 
   messages: [],
   status: AppStatus.IDLE,

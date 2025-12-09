@@ -21,6 +21,12 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@remodelvision/ui": [
+        "../../packages/ui/src/index.ts"
+      ],
+      "@remodelvision/sdk": [
+        "../../packages/sdk/src/index.ts"
       ]
     },
     "allowImportingTsExtensions": true,
@@ -28,6 +34,12 @@
     "strict": true,
     "noUncheckedIndexedAccess": true
   },
-  "include": ["src"],
-  "exclude": ["node_modules"]
+  "include": [
+    "src",
+    "../../packages/ui/src",
+    "../../packages/sdk/src"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

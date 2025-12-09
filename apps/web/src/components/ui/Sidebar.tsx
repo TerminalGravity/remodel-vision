@@ -3,6 +3,7 @@ import { Send, Upload, Box, Sparkles, Loader2, User, Bot, Briefcase, ChevronLeft
 import { useStore } from '../../store/useStore';
 import { geminiService } from '../../services/geminiService';
 import { AppStatus, AppViewMode, WorkspaceView } from '../../types';
+import { Button } from '@remodelvision/ui';
 
 // Simple Tooltip Component
 interface TooltipProps {
@@ -95,7 +96,7 @@ export const Sidebar = () => {
         // Give time for view to switch before capturing
         setTimeout(() => {
           setStatus(AppStatus.GENERATING_IMAGE);
-          addMessage({ role: 'system', content: `Capturing view... Applying "${activeProject?.config.style}" style filter.` });
+          addMessage({ role: 'system', content: `Capturing view... Applying "${activeProject?.config.style || 'Modern'}" style filter.` });
           setCaptureRequest(true); 
         }, 500);
       } else {
@@ -106,7 +107,7 @@ export const Sidebar = () => {
     } else {
       // Normal chat
       const response = await geminiService.chat(messages.map(m => `${m.role}: ${m.content}`), currentInput);
-      addMessage({ role: 'model', content: response });
+      addMessage({ role: 'model', content: response || '' });
     }
   };
 
@@ -128,8 +129,8 @@ export const Sidebar = () => {
       reader.onload = async (event) => {
         const base64 = event.target?.result as string;
         try {
-          const analysis = await geminiService.analyzeContext(base64.split(',')[1], "Identify rooms and constraints.");
-          updateProjectContext(analysis);
+          const analysis = await geminiService.analyzeContext(base64.split(',')[1] || '', "Identify rooms and constraints.");
+          updateProjectContext(analysis || '');
           addMessage({ role: 'model', content: `Analyzed Plan: ${analysis}` });
           setStatus(AppStatus.READY);
           addNotification('success', 'Blueprint analyzed');
@@ -149,12 +150,14 @@ export const Sidebar = () => {
         {/* Editor Header */}
         <div className="bg-slate-800 border-b border-slate-700">
           <div className="p-4 pb-2">
-            <button 
+            <Button 
+              variant="ghost"
+              size="sm"
               onClick={() => setViewMode(AppViewMode.DASHBOARD)}
-              className="flex items-center gap-1 text-xs text-slate-400 hover:text-white mb-3 transition-colors"
+              className="flex items-center gap-1 text-xs text-slate-400 hover:text-white mb-3 transition-colors pl-0 hover:bg-transparent"
             >
               <ChevronLeft className="w-3 h-3" /> Back to Dashboard
-            </button>
+            </Button>
             
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded bg-gradient-to-br from-slate-700 to-slate-800 border border-slate-600 flex items-center justify-center">
@@ -285,13 +288,14 @@ export const Sidebar = () => {
               placeholder="Describe your design changes..."
               className="w-full bg-slate-900 border border-slate-600 rounded-lg pl-4 pr-10 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 text-white placeholder-slate-500 transition-all"
             />
-            <button 
+            <Button 
+              size="icon"
               onClick={handleSendMessage}
-              className="absolute right-2 top-2 p-1.5 bg-blue-600 hover:bg-blue-500 rounded-md text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="absolute right-2 top-2 h-8 w-8 bg-blue-600 hover:bg-blue-500"
               disabled={!input.trim()}
             >
               <Send className="w-4 h-4" />
-            </button>
+            </Button>
           </div>
         </div>
       </div>

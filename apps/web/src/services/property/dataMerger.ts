@@ -88,26 +88,27 @@ function generateId(): string {
 /**
  * Parse lot size string to AreaMeasurement
  */
-function parseLotSize(lotSize: string | undefined): AreaMeasurement | undefined {
+function parseLotSize(lotSize: string | number | undefined | null): AreaMeasurement | undefined {
   if (!lotSize) return undefined;
 
-  const normalized = lotSize.toLowerCase().replace(/,/g, '');
+  const lotSizeStr = String(lotSize);
+  const normalized = lotSizeStr.toLowerCase().replace(/,/g, '');
 
   // Check for acres
   const acresMatch = normalized.match(/([\d.]+)\s*acres?/);
-  if (acresMatch) {
+  if (acresMatch?.[1]) {
     return { value: parseFloat(acresMatch[1]), unit: 'acres' };
   }
 
   // Check for sqft
   const sqftMatch = normalized.match(/([\d.]+)\s*(?:sq\s*ft|sqft|sf)/);
-  if (sqftMatch) {
+  if (sqftMatch?.[1]) {
     return { value: parseFloat(sqftMatch[1]), unit: 'sqft' };
   }
 
   // Try to parse as number (assume sqft)
   const numMatch = normalized.match(/([\d.]+)/);
-  if (numMatch) {
+  if (numMatch?.[1]) {
     return { value: parseFloat(numMatch[1]), unit: 'sqft' };
   }
 
@@ -140,22 +141,24 @@ function parseAddress(addressStr: string): PropertyAddress {
   // Simple parsing - in production, use a geocoding API
   const parts = addressStr.split(',').map((p) => p.trim());
 
-  let street = parts[0] || addressStr;
+  const street = parts[0] ?? addressStr;
   let city = '';
   let state = '';
   let zip = '';
 
-  if (parts.length >= 2) {
-    city = parts[1];
+  const cityPart = parts[1];
+  if (cityPart) {
+    city = cityPart;
   }
 
-  if (parts.length >= 3) {
+  const stateZipPart = parts[2];
+  if (stateZipPart) {
     // "TX 78701" or "TX" or "78701"
-    const stateZip = parts[2].trim();
+    const stateZip = stateZipPart.trim();
     const match = stateZip.match(/([A-Z]{2})?\s*(\d{5}(?:-\d{4})?)?/i);
     if (match) {
-      state = match[1]?.toUpperCase() || '';
-      zip = match[2] || '';
+      state = match[1]?.toUpperCase() ?? '';
+      zip = match[2] ?? '';
     }
   }
 
@@ -177,7 +180,7 @@ function getBestValue<T>(
   field: string,
   sources: Array<{ source: DataSource; value: T | undefined; confidence: number }>
 ): { value: T | undefined; source: DataSource; confidence: number } {
-  const priority = SOURCE_PRIORITY[field] || SOURCE_PRIORITY.default;
+  const priority = SOURCE_PRIORITY[field] || SOURCE_PRIORITY['default'] || ['zillow', 'redfin', 'county-assessor'];
 
   // Filter to non-null values
   const validSources = sources.filter(
@@ -206,7 +209,8 @@ function getBestValue<T>(
     return b.confidence - a.confidence;
   });
 
-  return validSources[0];
+  const result = validSources[0];
+  return result ?? { value: undefined, source: 'zillow', confidence: 0 };
 }
 
 /**

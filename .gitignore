@@ -33,4 +33,11 @@ node_modules/
 
 # Task files
 # tasks.json
-# tasks/ 
+# tasks/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Temporary plan files
+task*_plan.md
+*_plan.md

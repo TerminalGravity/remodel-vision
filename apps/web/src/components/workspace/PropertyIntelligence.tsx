@@ -1,10 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../../store/useStore';
-import { Building2, Save, Map, Sun, GraduationCap, Footprints, AlertTriangle, FileText } from 'lucide-react';
+import { Building2, Save, Map, Sun, GraduationCap, Footprints, AlertTriangle, FileText, RefreshCw, DollarSign, Home, Calendar, Loader2 } from 'lucide-react';
 import { PropertyMeta } from '../../types';
 
 export const PropertyIntelligence = () => {
-  const { activePropertyMeta, updatePropertyMeta, activeProjectId, projects, addNotification } = useStore();
+  const {
+    activePropertyMeta,
+    activePropertyContext,
+    propertyFetchStatus,
+    propertyFetchErrors,
+    updatePropertyMeta,
+    fetchPropertyContext,
+    activeProjectId,
+    projects,
+    addNotification
+  } = useStore();
   const project = projects.find(p => p.id === activeProjectId);
   
   const [formData, setFormData] = useState<PropertyMeta>({
@@ -29,6 +39,14 @@ export const PropertyIntelligence = () => {
     addNotification('success', 'Property Intelligence updated successfully');
   };
 
+  const handleRefresh = () => {
+    if (project?.config.location.address) {
+      fetchPropertyContext(project.config.location.address);
+    }
+  };
+
+  const isLoading = propertyFetchStatus === 'loading';
+
   return (
     <div className="w-full h-full bg-slate-900 overflow-y-auto p-8">
       <div className="max-w-4xl mx-auto space-y-8">
@@ -43,14 +61,69 @@ export const PropertyIntelligence = () => {
               Manage geospatial and regulatory data for <span className="text-white font-medium">{project?.config.location.address}</span>.
             </p>
           </div>
-          <button 
-            onClick={handleSave}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-lg shadow-blue-900/20"
-          >
-            <Save className="w-5 h-5" />
-            Save Changes
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleRefresh}
+              disabled={isLoading}
+              className="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-white px-4 py-3 rounded-lg font-medium transition-colors disabled:opacity-50"
+            >
+              {isLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <RefreshCw className="w-5 h-5" />
+              )}
+              {isLoading ? 'Fetching...' : 'Refresh'}
+            </button>
+            <button
+              onClick={handleSave}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-lg shadow-blue-900/20"
+            >
+              <Save className="w-5 h-5" />
+              Save Changes
+            </button>
+          </div>
         </div>
+
+        {/* Enhanced Property Data (from Firecrawl) */}
+        {activePropertyContext && (
+          <div className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-500/30 rounded-xl p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Home className="w-6 h-6 text-blue-400" />
+              <h3 className="text-lg font-semibold text-white">Property Overview</h3>
+              <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full">
+                {activePropertyContext.metadata?.completeness || 0}% Complete
+              </span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-slate-800/50 rounded-lg p-4">
+                <p className="text-xs text-slate-400 mb-1">Bedrooms</p>
+                <p className="text-2xl font-bold text-white">{activePropertyContext.details?.bedrooms || 'N/A'}</p>
+              </div>
+              <div className="bg-slate-800/50 rounded-lg p-4">
+                <p className="text-xs text-slate-400 mb-1">Bathrooms</p>
+                <p className="text-2xl font-bold text-white">{activePropertyContext.details?.bathrooms || 'N/A'}</p>
+              </div>
+              <div className="bg-slate-800/50 rounded-lg p-4">
+                <p className="text-xs text-slate-400 mb-1">Living Area</p>
+                <p className="text-2xl font-bold text-white">
+                  {activePropertyContext.details?.livingArea?.value?.toLocaleString() || 'N/A'}
+                  <span className="text-sm text-slate-400 ml-1">sqft</span>
+                </p>
+              </div>
+              <div className="bg-slate-800/50 rounded-lg p-4">
+                <p className="text-xs text-slate-400 mb-1">Est. Value</p>
+                <p className="text-2xl font-bold text-green-400">
+                  ${(activePropertyContext.valuation?.marketEstimate || 0).toLocaleString()}
+                </p>
+              </div>
+            </div>
+            {activePropertyContext.sources && activePropertyContext.sources.length > 0 && (
+              <p className="text-xs text-slate-500 mt-4">
+                Data sources: {activePropertyContext.sources.map(s => s.source).join(', ')}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Integration Status */}
         <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 flex items-start gap-4">

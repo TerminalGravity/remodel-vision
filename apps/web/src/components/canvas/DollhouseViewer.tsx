@@ -5,6 +5,8 @@ import * as THREE from 'three';
 import { useStore } from '../../store/useStore';
 import { Eye, Grid as GridIcon, Layers, Sun, Map as MapIcon, Compass } from 'lucide-react';
 
+import { DollhouseScene } from './DollhouseScene';
+
 // Helper to capture the canvas
 const ScreenshotManager = () => {
   const { gl, scene, camera } = useThree();
@@ -123,29 +125,6 @@ const PropertyAnnotations = ({ visible }: { visible: boolean }) => {
   );
 };
 
-const PlaceholderRoom = () => {
-  const setSelectedRoom = useStore((state) => state.setSelectedRoom);
-  return (
-    <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow onClick={(e) => { e.stopPropagation(); setSelectedRoom("Floor Plan Area"); }}>
-        <planeGeometry args={[20, 20]} />
-        <meshStandardMaterial color="#e2e8f0" roughness={0.8} />
-      </mesh>
-      <mesh position={[0, 2, -5]} castShadow receiveShadow onClick={(e) => { e.stopPropagation(); setSelectedRoom("North Wall"); }}>
-        <boxGeometry args={[10, 4, 0.5]} />
-        <meshStandardMaterial color="#cbd5e1" />
-      </mesh>
-      <mesh position={[-5, 2, 0]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow onClick={(e) => { e.stopPropagation(); setSelectedRoom("West Wall"); }}>
-        <boxGeometry args={[10, 4, 0.5]} />
-        <meshStandardMaterial color="#cbd5e1" />
-      </mesh>
-      <mesh position={[0, 0.5, 0]} castShadow onClick={(e) => { e.stopPropagation(); setSelectedRoom("Kitchen Island Mockup"); }}>
-        <boxGeometry args={[3, 1, 1.2]} />
-        <meshStandardMaterial color="#475569" />
-      </mesh>
-    </group>
-  );
-};
 
 export const DollhouseViewer = () => {
   const { modelUrl, siteMode, setSiteMode } = useStore();
@@ -179,7 +158,7 @@ export const DollhouseViewer = () => {
             shadow-bias={-0.0001}
           />
           
-          {modelUrl ? <Model url={modelUrl} /> : <PlaceholderRoom />}
+          {modelUrl ? <Model url={modelUrl} /> : <DollhouseScene />}
           
           {/* Site Context Elements */}
           {siteMode && (

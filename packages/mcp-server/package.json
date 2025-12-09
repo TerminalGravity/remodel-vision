@@ -1,0 +1,40 @@
+{
+  "name": "@remodelvision/mcp-server",
+  "version": "0.1.0",
+  "description": "MCP server for RemodelVision - property intelligence for AI agents",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "remodelvision-mcp": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "typescript": "~5.8.2"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "remodelvision",
+    "property",
+    "renovation",
+    "ai-agent"
+  ],
+  "author": "Jack Felke",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jackfelke/remodel-vision.git",
+    "directory": "packages/mcp-server"
+  }
+}
