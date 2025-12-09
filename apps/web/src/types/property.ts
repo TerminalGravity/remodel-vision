@@ -385,10 +385,17 @@ export interface RoomContext {
 
   // Simplified measurements
   dimensions?: {
-    length?: number;
-    width?: number;
-    height?: number;
+    length?: number; // x-axis dimension
+    width?: number;  // z-axis dimension
+    height?: number; // y-axis dimension
     sqft?: number;
+  };
+
+  // Position relative to house origin (bottom-left-front corner)
+  position?: {
+    x: number;
+    y: number;
+    z: number;
   };
 
   // Current state
@@ -398,13 +405,45 @@ export interface RoomContext {
     walls?: string;
     ceiling?: string;
   };
+
+  // Detailed Layout (for 3D viz)
+  layout?: RoomLayout;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ROOM LAYOUT (Unified Tier 3/4 Data Structure)
+// ═══════════════════════════════════════════════════════════════
+
+export interface Opening {
+  id: string;
+  type: 'door' | 'window' | 'opening';
+  wallIndex: number; // Index of the wall this opening is on
+  position: number;  // Distance from wall start
+  width: number;
+  height: number;
+  sillHeight?: number; // Distance from floor
+}
+
+export interface Wall {
+  start: { x: number; y: number };
+  end: { x: number; y: number };
+  thickness: number;
+  height: number;
+}
+
+export interface RoomLayout {
+  walls: Wall[];
+  openings: Opening[];
+  ceilingHeight: number;
+  confidence: number; // 0.0 - 1.0 (Tier 4 ~0.4, Tier 3 ~0.8, Tier 2 ~0.98)
+  source: 'heuristic' | 'vision_floor_plan' | 'user_measured' | 'lidar';
 }
 
 // ═══════════════════════════════════════════════════════════════
 // SOURCES & METADATA
 // ═══════════════════════════════════════════════════════════════
 
-export type DataSource = 'zillow' | 'redfin' | 'county-assessor' | 'mls' | 'user-input' | 'ai-estimate' | 'document';
+export type DataSource = 'zillow' | 'redfin' | 'county-assessor' | 'mls' | 'user-input' | 'ai-estimate' | 'document' | 'google-grounding';
 
 export interface SourceReference {
   source: DataSource;
@@ -497,6 +536,24 @@ export interface CountyAssessorScrapedData {
   garage?: string;
   basement?: string;
   permitHistory?: Array<{ date: string; type: string; description: string }>;
+}
+
+export interface GroundingData {
+  address?: string;
+  zoning?: string;
+  yearBuilt?: number;
+  propertyType?: string;
+  sqft?: number;
+  lotSize?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  estimatedValue?: number;
+  schoolDistrict?: string;
+  schools?: Array<{ name: string; rating: number; distance: string; type: string }>;
+  amenities?: string[];
+  neighborhoodVibe?: string;
+  walkScore?: number;
+  floodZone?: string;
 }
 
 // ═══════════════════════════════════════════════════════════════
