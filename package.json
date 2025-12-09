@@ -3,8 +3,11 @@
   "private": true,
   "scripts": {
     "dev": "pnpm --filter @remodelvision/web dev",
+    "dev:marketing": "pnpm --filter @remodelvision/marketing dev",
+    "dev:all": "pnpm -r --parallel dev",
     "build": "pnpm -r build",
     "build:web": "pnpm --filter @remodelvision/web build",
+    "build:marketing": "pnpm --filter @remodelvision/marketing build",
     "build:sdk": "pnpm --filter @remodelvision/sdk build",
     "build:mcp": "pnpm --filter @remodelvision/mcp-server build",
     "lint": "pnpm -r lint",

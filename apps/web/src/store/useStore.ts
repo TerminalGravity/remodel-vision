@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { ChatMessage, AppStatus, GeneratedResult, Project, Notification, AppViewMode, PropertyMeta, WorkspaceView } from '../types';
+import { ChatMessage, AppStatus, GeneratedResult, Project, Notification, AppViewMode, PropertyMeta, WorkspaceView, GenerationConfig, MediaType } from '../types';
 import { geminiService } from '../services/geminiService';
 import { fetchPropertyData, isPropertyServiceAvailable } from '../services/property';
 import type { PropertyContext } from '../types/property';
@@ -34,6 +34,12 @@ interface AppState {
   addMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
   setStatus: (status: AppStatus) => void;
   
+  // Generation Settings
+  generationConfig: GenerationConfig;
+  updateGenerationConfig: (config: Partial<GenerationConfig>) => void;
+  activeMediaType: MediaType;
+  setActiveMediaType: (type: MediaType) => void;
+
   // 3D & Context State
   modelUrl: string | null;
   setModelUrl: (url: string) => void;
@@ -47,9 +53,13 @@ interface AppState {
   captureRequest: boolean;
   setCaptureRequest: (request: boolean) => void;
   
-  // Results
-  lastGeneratedResult: GeneratedResult | null;
-  setGeneratedResult: (result: GeneratedResult | null) => void;
+  // Results & Gallery
+  generatedResults: GeneratedResult[];
+  activeResultId: string | null;
+  setGeneratedResults: (results: GeneratedResult[]) => void;
+  addGeneratedResult: (result: GeneratedResult) => void;
+  removeGeneratedResult: (id: string) => void;
+  setActiveResult: (id: string | null) => void;
 
   // Project "Truth"
   projectContext: string;
@@ -132,7 +142,8 @@ export const useStore = create<AppState>((set, get) => ({
       }],
       projectContext: "",
       modelUrl: null,
-      lastGeneratedResult: null,
+      generatedResults: [],
+      activeResultId: null,
       activePropertyMeta: null, // Reset while fetching
       activePropertyContext: null,
       propertyFetchStatus: 'idle',
@@ -175,7 +186,8 @@ export const useStore = create<AppState>((set, get) => ({
 
   fetchPropertyMeta: async (address) => {
     try {
-      const meta = await geminiService.getPropertyDetails(address);
+      // Use Thinking mode for deeper analysis
+      const meta = await geminiService.getPropertyDetails(address, get().generationConfig.thinkingMode);
       set({ activePropertyMeta: meta });
       get().addMessage({
         role: 'system',
@@ -274,6 +286,16 @@ export const useStore = create<AppState>((set, get) => ({
   })),
   setStatus: (status) => set({ status }),
   
+  // Generation Settings
+  generationConfig: {
+    aspectRatio: '16:9',
+    resolution: '4k',
+    thinkingMode: false
+  },
+  updateGenerationConfig: (config) => set((state) => ({ generationConfig: { ...state.generationConfig, ...config } })),
+  activeMediaType: 'image',
+  setActiveMediaType: (type) => set({ activeMediaType: type }),
+
   modelUrl: null,
   setModelUrl: (url) => set({ modelUrl: url }),
   
@@ -286,8 +308,18 @@ export const useStore = create<AppState>((set, get) => ({
   captureRequest: false,
   setCaptureRequest: (request) => set({ captureRequest: request }),
   
-  lastGeneratedResult: null,
-  setGeneratedResult: (result) => set({ lastGeneratedResult: result }),
+  generatedResults: [],
+  activeResultId: null,
+  setGeneratedResults: (results) => set({ generatedResults: results }),
+  addGeneratedResult: (result) => set((state) => ({ 
+    generatedResults: [result, ...state.generatedResults],
+    activeResultId: result.id
+  })),
+  removeGeneratedResult: (id) => set((state) => ({
+    generatedResults: state.generatedResults.filter(r => r.id !== id),
+    activeResultId: state.activeResultId === id ? null : state.activeResultId
+  })),
+  setActiveResult: (id) => set({ activeResultId: id }),
 
   projectContext: "",
   updateProjectContext: (info) => set((state) => ({ projectContext: state.projectContext + "\n" + info })),

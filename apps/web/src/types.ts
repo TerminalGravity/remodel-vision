@@ -48,6 +48,7 @@ export enum AppStatus {
   IDLE = 'IDLE',
   ANALYZING_CONTEXT = 'ANALYZING_CONTEXT',
   GENERATING_IMAGE = 'GENERATING_IMAGE',
+  GENERATING_VIDEO = 'GENERATING_VIDEO',
   READY = 'READY',
   ERROR = 'ERROR'
 }
@@ -57,12 +58,24 @@ export enum AppViewMode {
   EDITOR = 'EDITOR'
 }
 
-export type WorkspaceView = 'DESIGN' | 'SETTINGS' | 'INTELLIGENCE';
+export type WorkspaceView = 'DESIGN' | 'SETTINGS' | 'INTELLIGENCE' | 'GALLERY';
+
+export type MediaType = 'image' | 'video' | 'audio';
+
+export interface GenerationConfig {
+  aspectRatio: '16:9' | '4:3' | '1:1';
+  resolution: '2k' | '4k';
+  thinkingMode: boolean; // Enables gemini-3-pro-preview
+}
 
 export interface GeneratedResult {
-  originalImage: string; // Base64 of the 3D scene
-  generatedImage: string; // URL/Base64 from Gemini
+  id: string;
+  originalImage?: string; // Base64 of the 3D scene (optional for video/audio)
+  generatedUrl: string; // URL/Base64 from Gemini/Veo
+  thumbnailUrl?: string; // For videos
+  type: MediaType;
   prompt: string;
+  timestamp: number;
 }
 
 export interface Notification {

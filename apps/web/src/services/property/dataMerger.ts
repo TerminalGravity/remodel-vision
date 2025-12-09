@@ -21,39 +21,44 @@ import type {
   ZillowScrapedData,
   RedfinScrapedData,
   CountyAssessorScrapedData,
+  GroundingData,
   PropertyType,
   AreaMeasurement,
 } from '../../types/property';
 
-// Source priority for different data categories
+import { generateRoomsFromDetails } from './roomGenerator';
+
+/**
+ * Source priority for different data categories
+ */
 const SOURCE_PRIORITY: Record<string, DataSource[]> = {
   // Legal/regulatory data - county assessor is most authoritative
   parcelNumber: ['county-assessor', 'zillow', 'redfin'],
-  zoning: ['county-assessor', 'zillow', 'redfin'],
+  zoning: ['county-assessor', 'google-grounding', 'zillow', 'redfin'],
   assessedValue: ['county-assessor', 'zillow', 'redfin'],
   taxAmount: ['county-assessor', 'zillow', 'redfin'],
   legalDescription: ['county-assessor'],
   permits: ['county-assessor'],
 
   // Building characteristics - county assessor has official records
-  yearBuilt: ['county-assessor', 'zillow', 'redfin'],
-  sqft: ['county-assessor', 'zillow', 'redfin'],
-  bedrooms: ['county-assessor', 'zillow', 'redfin'],
-  bathrooms: ['county-assessor', 'zillow', 'redfin'],
+  yearBuilt: ['county-assessor', 'google-grounding', 'zillow', 'redfin'],
+  sqft: ['county-assessor', 'google-grounding', 'zillow', 'redfin'],
+  bedrooms: ['county-assessor', 'zillow', 'redfin', 'google-grounding'],
+  bathrooms: ['county-assessor', 'zillow', 'redfin', 'google-grounding'],
   stories: ['county-assessor', 'zillow', 'redfin'],
   construction: ['county-assessor'],
   foundation: ['county-assessor'],
 
   // Market data - listing sites are more current
   price: ['zillow', 'redfin', 'county-assessor'],
-  marketEstimate: ['zillow', 'redfin'],
+  marketEstimate: ['zillow', 'redfin', 'google-grounding'],
   priceHistory: ['zillow', 'redfin'],
 
   // Location/scores - Zillow has best data
-  walkScore: ['zillow', 'redfin'],
+  walkScore: ['zillow', 'redfin', 'google-grounding'],
   transitScore: ['zillow'],
   bikeScore: ['zillow'],
-  schools: ['zillow', 'redfin'],
+  schools: ['google-grounding', 'zillow', 'redfin'],
 
   // Coordinates
   latitude: ['zillow', 'redfin'],
@@ -63,19 +68,21 @@ const SOURCE_PRIORITY: Record<string, DataSource[]> = {
   hoa: ['redfin', 'zillow'],
 
   // Default
-  default: ['county-assessor', 'zillow', 'redfin'],
+  default: ['county-assessor', 'zillow', 'redfin', 'google-grounding'],
 };
 
 interface SourceData {
   zillow?: ZillowScrapedData;
   redfin?: RedfinScrapedData;
   countyAssessor?: CountyAssessorScrapedData;
+  grounding?: GroundingData;
 }
 
 interface SourceMeta {
   zillow?: SourceReference;
   redfin?: SourceReference;
   countyAssessor?: SourceReference;
+  grounding?: SourceReference;
 }
 
 /**
@@ -276,15 +283,17 @@ export function mergePropertyData(
   if (meta.zillow) sources.push(meta.zillow);
   if (meta.redfin) sources.push(meta.redfin);
   if (meta.countyAssessor) sources.push(meta.countyAssessor);
+  if (meta.grounding) sources.push(meta.grounding);
 
   // Confidence helpers
   const zConf = meta.zillow?.confidence || 0;
   const rConf = meta.redfin?.confidence || 0;
   const cConf = meta.countyAssessor?.confidence || 0;
+  const gConf = meta.grounding?.confidence || 0;
 
   // Build address
   const bestAddress =
-    data.zillow?.address || data.redfin?.address || address;
+    data.zillow?.address || data.redfin?.address || data.grounding?.address || address;
   const parsedAddress = parseAddress(bestAddress);
 
   // Merge location
@@ -304,12 +313,14 @@ export function mergePropertyData(
     { source: 'county-assessor', value: data.countyAssessor?.lotSize, confidence: cConf },
     { source: 'zillow', value: data.zillow?.lotSize, confidence: zConf },
     { source: 'redfin', value: data.redfin?.lotSize, confidence: rConf },
+    { source: 'google-grounding', value: data.grounding?.lotSize, confidence: gConf },
   ]);
 
   const sqft = trackField('sqft', [
     { source: 'county-assessor', value: data.countyAssessor?.sqft, confidence: cConf },
     { source: 'zillow', value: data.zillow?.sqft, confidence: zConf },
     { source: 'redfin', value: data.redfin?.sqft, confidence: rConf },
+    { source: 'google-grounding', value: data.grounding?.sqft, confidence: gConf },
   ]);
 
   const details: PropertyDetails = {
@@ -317,12 +328,14 @@ export function mergePropertyData(
       trackField('propertyType', [
         { source: 'zillow', value: data.zillow?.propertyType, confidence: zConf },
         { source: 'redfin', value: data.redfin?.propertyType, confidence: rConf },
+        { source: 'google-grounding', value: data.grounding?.propertyType, confidence: gConf },
       ])
     ),
     yearBuilt: trackField('yearBuilt', [
       { source: 'county-assessor', value: data.countyAssessor?.yearBuilt, confidence: cConf },
       { source: 'zillow', value: data.zillow?.yearBuilt, confidence: zConf },
       { source: 'redfin', value: data.redfin?.yearBuilt, confidence: rConf },
+      { source: 'google-grounding', value: data.grounding?.yearBuilt, confidence: gConf },
     ]) || 0,
     stories: trackField('stories', [
       { source: 'county-assessor', value: data.countyAssessor?.stories, confidence: cConf },
@@ -333,11 +346,13 @@ export function mergePropertyData(
       { source: 'county-assessor', value: data.countyAssessor?.bedrooms, confidence: cConf },
       { source: 'zillow', value: data.zillow?.bedrooms, confidence: zConf },
       { source: 'redfin', value: data.redfin?.bedrooms, confidence: rConf },
+      { source: 'google-grounding', value: data.grounding?.bedrooms, confidence: gConf },
     ]) || 0,
     bathrooms: trackField('bathrooms', [
       { source: 'county-assessor', value: data.countyAssessor?.bathrooms, confidence: cConf },
       { source: 'zillow', value: data.zillow?.bathrooms, confidence: zConf },
       { source: 'redfin', value: data.redfin?.bathrooms, confidence: rConf },
+      { source: 'google-grounding', value: data.grounding?.bathrooms, confidence: gConf },
     ]) || 0,
   };
 
@@ -389,9 +404,15 @@ export function mergePropertyData(
   const regulatory: RegulatoryInfo = {
     zoning: trackField('zoning', [
       { source: 'county-assessor', value: data.countyAssessor?.zoning, confidence: cConf },
+      { source: 'google-grounding', value: data.grounding?.zoning, confidence: gConf },
     ]) || 'Unknown',
     parcelNumber: data.countyAssessor?.parcelNumber,
     legalDescription: data.countyAssessor?.legalDescription,
+    floodZone: {
+      zone: data.grounding?.floodZone || 'Unknown',
+      inFloodplain: !!data.grounding?.floodZone && data.grounding.floodZone !== 'X',
+      insuranceRequired: false // Default assumption unless known
+    }
   };
 
   // Add permits if available
@@ -422,6 +443,7 @@ export function mergePropertyData(
     marketEstimate: trackField('marketEstimate', [
       { source: 'zillow', value: data.zillow?.zestimate, confidence: zConf },
       { source: 'redfin', value: data.redfin?.estimate, confidence: rConf },
+      { source: 'google-grounding', value: data.grounding?.estimatedValue, confidence: gConf },
     ]),
     taxAnnual: trackField('taxAmount', [
       { source: 'county-assessor', value: data.countyAssessor?.taxAmount, confidence: cConf },
@@ -446,6 +468,7 @@ export function mergePropertyData(
   const neighborhood: NeighborhoodInfo = {
     walkScore: trackField('walkScore', [
       { source: 'zillow', value: data.zillow?.walkScore, confidence: zConf },
+      { source: 'google-grounding', value: data.grounding?.walkScore, confidence: gConf },
     ]),
     transitScore: trackField('transitScore', [
       { source: 'zillow', value: data.zillow?.transitScore, confidence: zConf },
@@ -453,9 +476,10 @@ export function mergePropertyData(
     bikeScore: trackField('bikeScore', [
       { source: 'zillow', value: data.zillow?.bikeScore, confidence: zConf },
     ]),
+    schoolDistrict: data.grounding?.schoolDistrict,
   };
 
-  // Add schools from Zillow
+  // Add schools from Zillow or Grounding
   if (data.zillow?.schools?.length) {
     neighborhood.schools = data.zillow.schools.map((s) => ({
       name: s.name,
@@ -469,6 +493,24 @@ export function mergePropertyData(
       rating: s.rating,
       distance: parseFloat(s.distance) || undefined,
     }));
+  } else if (data.grounding?.schools?.length) {
+    neighborhood.schools = data.grounding.schools.map((s) => ({
+      name: s.name,
+      type: s.type.toLowerCase().includes('elementary')
+        ? 'elementary'
+        : s.type.toLowerCase().includes('middle')
+        ? 'middle'
+        : s.type.toLowerCase().includes('high')
+        ? 'high'
+        : 'private',
+      rating: s.rating,
+      distance: parseFloat(s.distance) || undefined,
+    }));
+  }
+  
+  if (data.grounding?.neighborhoodVibe) {
+    // Inject vibe into metadata or description if we had a field for it.
+    // For now, we don't have a direct field, but we can assume it might be used later.
   }
 
   // Calculate completeness
@@ -501,10 +543,11 @@ export function mergePropertyData(
     completeness,
     dataQuality: completeness > 70 ? 'scraped' : 'estimated',
     confidence: {
-      overall: Math.max(zConf, rConf, cConf),
+      overall: Math.max(zConf, rConf, cConf, gConf),
       zillow: zConf,
       redfin: rConf,
       countyAssessor: cConf,
+      grounding: gConf,
     },
   };
 
@@ -520,7 +563,7 @@ export function mergePropertyData(
     regulatory,
     valuation,
     neighborhood,
-    rooms: [], // Rooms are added separately
+    rooms: generateRoomsFromDetails(details),
     sources,
     metadata,
   };

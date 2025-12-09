@@ -1,10 +1,22 @@
 import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import { DollhouseViewer } from './components/canvas/DollhouseViewer';
 import { Sidebar } from './components/ui/Sidebar';
 import { ResultOverlay } from './components/ui/ResultOverlay';
 import { Dashboard } from './components/dashboard/Dashboard';
 import { ProjectSettingsPage } from './components/workspace/ProjectSettings';
 import { PropertyIntelligence } from './components/workspace/PropertyIntelligence';
+import { Gallery } from './components/workspace/Gallery';
+import { AuthLayout } from './components/auth/AuthLayout';
+import { AdminDashboard } from './components/admin/AdminDashboard';
+import {
+  LoginPage,
+  RegisterPage,
+  ForgotPasswordPage,
+  ResetPasswordPage,
+  AuthCallbackPage,
+} from './routes/auth';
 import { useStore } from './store/useStore';
 import { AppViewMode } from './types';
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
@@ -33,7 +45,8 @@ const Toast: React.FC<ToastProps> = ({ type, message, onClose }) => {
   );
 };
 
-function App() {
+// Main app content (authenticated area)
+const MainApp: React.FC = () => {
   const { selectedRoom, notifications, removeNotification, viewMode, workspaceView } = useStore();
 
   return (
@@ -57,9 +70,10 @@ function App() {
                   )}
                 </>
               )}
-              
+
               {workspaceView === 'SETTINGS' && <ProjectSettingsPage />}
               {workspaceView === 'INTELLIGENCE' && <PropertyIntelligence />}
+              {workspaceView === 'GALLERY' && <Gallery />}
             </>
           }
           sidebar={<Sidebar />}
@@ -70,15 +84,41 @@ function App() {
       {/* Global Toast Container */}
       <div className="absolute bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-auto">
         {notifications.map(n => (
-          <Toast 
-            key={n.id} 
-            type={n.type} 
-            message={n.message} 
-            onClose={() => removeNotification(n.id)} 
+          <Toast
+            key={n.id}
+            type={n.type}
+            message={n.message}
+            onClose={() => removeNotification(n.id)}
           />
         ))}
       </div>
     </AppShell>
+  );
+};
+
+function App() {
+  return (
+    <HelmetProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Auth routes */}
+          <Route path="/auth" element={<AuthLayout />}>
+            <Route path="login" element={<LoginPage />} />
+            <Route path="register" element={<RegisterPage />} />
+            <Route path="forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="reset-password" element={<ResetPasswordPage />} />
+            <Route path="callback" element={<AuthCallbackPage />} />
+            <Route index element={<Navigate to="/auth/login" replace />} />
+          </Route>
+
+          {/* Admin routes */}
+          <Route path="/admin/*" element={<AdminDashboard />} />
+
+          {/* Main app routes */}
+          <Route path="/*" element={<MainApp />} />
+        </Routes>
+      </BrowserRouter>
+    </HelmetProvider>
   );
 }
 

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../../store/useStore';
-import { Building2, Save, Map, Sun, GraduationCap, Footprints, AlertTriangle, FileText, RefreshCw, DollarSign, Home, Calendar, Loader2 } from 'lucide-react';
+import { Building2, Save, Map, Sun, GraduationCap, Footprints, AlertTriangle, FileText, RefreshCw, DollarSign, Home, Calendar, Loader2, Brain } from 'lucide-react';
 import { PropertyMeta } from '../../types';
+import { geminiService } from '../../services/geminiService';
 
 export const PropertyIntelligence = () => {
   const {
@@ -13,7 +14,8 @@ export const PropertyIntelligence = () => {
     fetchPropertyContext,
     activeProjectId,
     projects,
-    addNotification
+    addNotification,
+    generationConfig
   } = useStore();
   const project = projects.find(p => p.id === activeProjectId);
   
@@ -27,6 +29,8 @@ export const PropertyIntelligence = () => {
   });
 
   const [integrationEnabled, setIntegrationEnabled] = useState(true);
+  const [analysis, setAnalysis] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
 
   useEffect(() => {
     if (activePropertyMeta) {
@@ -42,6 +46,36 @@ export const PropertyIntelligence = () => {
   const handleRefresh = () => {
     if (project?.config.location.address) {
       fetchPropertyContext(project.config.location.address);
+    }
+  };
+
+  const generateInvestmentReport = async () => {
+    if (!activePropertyContext && !activePropertyMeta) return;
+    
+    setAnalyzing(true);
+    try {
+      // Construct context
+      const context = [
+        `Address: ${project?.config.location.address}`,
+        `Zoning: ${formData.zoning}`,
+        `Year Built: ${formData.yearBuilt}`,
+        `Lot Size: ${formData.lotSize}`,
+        `Est Value: ${activePropertyContext?.valuation?.marketEstimate || 'Unknown'}`,
+        `Walk Score: ${formData.walkScore}`
+      ];
+
+      const report = await geminiService.chat(
+        context,
+        "Generate a comprehensive Investment Feasibility Report. Analyze zoning constraints, potential value add from renovation, and rental yield potential. Be critical and cite risks.",
+        true // Force Thinking Mode for report
+      );
+
+      setAnalysis(report ?? null);
+      addNotification('success', 'Investment Report generated');
+    } catch (err) {
+      addNotification('error', 'Failed to generate report');
+    } finally {
+      setAnalyzing(false);
     }
   };
 
@@ -124,6 +158,39 @@ export const PropertyIntelligence = () => {
             )}
           </div>
         )}
+
+        {/* Investment Analysis */}
+        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+           <div className="flex justify-between items-center mb-4">
+             <div className="flex items-center gap-3">
+               <div className="p-2 bg-purple-500/20 rounded-lg">
+                 <Brain className="w-5 h-5 text-purple-400" />
+               </div>
+               <div>
+                 <h3 className="text-lg font-semibold text-white">Investment Feasibility Report</h3>
+                 <p className="text-xs text-slate-400">Deep Reasoning powered by Gemini 3 Pro</p>
+               </div>
+             </div>
+             <button 
+               onClick={generateInvestmentReport}
+               disabled={analyzing}
+               className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+             >
+               {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />}
+               {analyzing ? 'Reasoning...' : 'Generate Report'}
+             </button>
+           </div>
+           
+           {analysis ? (
+             <div className="bg-slate-900 rounded-lg p-4 text-sm text-slate-300 leading-relaxed whitespace-pre-wrap border border-slate-700">
+               {analysis}
+             </div>
+           ) : (
+             <div className="bg-slate-900/50 rounded-lg p-8 text-center border border-dashed border-slate-700">
+               <p className="text-slate-500 text-sm">Run analysis to identify risks, code compliance issues, and ROI potential.</p>
+             </div>
+           )}
+        </div>
 
         {/* Integration Status */}
         <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 flex items-start gap-4">

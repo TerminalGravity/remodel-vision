@@ -5,3 +5,4 @@ export * from './schema/types';
 export * from './schema/property';
 export * from './schema/project';
 export * from './schema/asset';
+export * from './schema/platform';
