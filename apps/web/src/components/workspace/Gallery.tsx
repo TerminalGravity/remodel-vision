@@ -101,7 +101,7 @@ export const Gallery = () => {
                       {new Date(result.timestamp).toLocaleDateString()}
                     </span>
                     <span className="bg-slate-900 px-2 py-0.5 rounded border border-slate-700">
-                      {result.type.toUpperCase()}
+                      {(result.type || 'IMAGE').toUpperCase()}
                     </span>
                   </div>
                 </div>

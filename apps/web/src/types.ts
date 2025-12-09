@@ -68,18 +68,11 @@ export interface GenerationConfig {
   thinkingMode: boolean; // Enables gemini-3-pro-preview
 }
 
-export interface GeneratedResult {
-  id: string;
-  originalImage?: string; // Base64 of the 3D scene (optional for video/audio)
-  generatedUrl: string; // URL/Base64 from Gemini/Veo
-  thumbnailUrl?: string; // For videos
-  type: MediaType;
-  prompt: string;
-  timestamp: number;
-}
-
 export interface Notification {
   id: string;
   type: 'success' | 'error' | 'info';
   message: string;
 }
+
+// Re-export generation types
+export * from './types/generation';

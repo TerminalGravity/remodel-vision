@@ -3,7 +3,8 @@ import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment, ContactShadows, Grid, GizmoHelper, GizmoViewport, Sky, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useStore } from '../../store/useStore';
-import { Eye, Grid as GridIcon, Layers, Sun, Map as MapIcon, Compass } from 'lucide-react';
+import { Eye, Grid as GridIcon, Layers, Sun, Map as MapIcon, Compass, Camera } from 'lucide-react';
+import { AppStatus } from '../../types';
 
 import { DollhouseScene } from './DollhouseScene';
 
@@ -17,7 +18,28 @@ const ScreenshotManager = () => {
     if (captureRequest) {
       gl.render(scene, camera);
       const screenshot = gl.domElement.toDataURL('image/png');
-      const event = new CustomEvent('canvas-snapshot', { detail: screenshot });
+      
+      // Capture Camera State
+      const pCam = camera as THREE.PerspectiveCamera;
+      const direction = new THREE.Vector3();
+      camera.getWorldDirection(direction);
+      // Estimate target based on look direction (since we don't have direct access to OrbitControls target here)
+      const target = new THREE.Vector3().copy(camera.position).add(direction.multiplyScalar(20));
+
+      const cameraState = {
+        position: [camera.position.x, camera.position.y, camera.position.z],
+        target: [target.x, target.y, target.z],
+        fov: pCam.fov,
+        aspect: pCam.aspect,
+        up: [camera.up.x, camera.up.y, camera.up.z]
+      };
+
+      const event = new CustomEvent('canvas-snapshot', { 
+        detail: {
+          image: screenshot,
+          camera: cameraState
+        } 
+      });
       window.dispatchEvent(event);
       setCaptureRequest(false);
     }
@@ -127,7 +149,7 @@ const PropertyAnnotations = ({ visible }: { visible: boolean }) => {
 
 
 export const DollhouseViewer = () => {
-  const { modelUrl, siteMode, setSiteMode } = useStore();
+  const { modelUrl, siteMode, setSiteMode, setCaptureRequest, setStatus, addMessage, activeMediaType } = useStore();
   const [showGrid, setShowGrid] = useState(true);
   const [timeOfDay, setTimeOfDay] = useState(14); // 24hr format, default 2 PM
 
@@ -255,6 +277,21 @@ export const DollhouseViewer = () => {
              </button>
           </div>
         )}
+
+        {/* Action Button */}
+        <div className="bg-slate-900/90 backdrop-blur border border-slate-700 p-2 rounded-lg text-white shadow-xl mt-2">
+            <button 
+              onClick={() => {
+                setStatus(activeMediaType === 'video' ? AppStatus.GENERATING_VIDEO : AppStatus.GENERATING_IMAGE);
+                addMessage({ role: 'system', content: `Capturing view for ${activeMediaType}...` });
+                setCaptureRequest(true);
+              }}
+              className="flex items-center gap-2 w-full px-3 py-2.5 rounded text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white transition-all shadow-lg justify-center"
+            >
+              <Camera className="w-4 h-4" />
+              Visualize This View
+            </button>
+        </div>
       </div>
       
       {/* Compass / Orientation */}

@@ -1,9 +1,12 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Send, Upload, Box, Sparkles, Loader2, User, Bot, Briefcase, ChevronLeft, Settings, Building2, Layout, Cuboid, Video, Image as ImageIcon, Mic, Zap, Brain, MonitorPlay } from 'lucide-react';
+import { Send, Upload, Box, Sparkles, Loader2, User, Bot, Briefcase, ChevronLeft, Settings, Building2, Cuboid, Video, Image as ImageIcon, Mic, Zap, Brain, MonitorPlay } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { geminiService } from '../../services/geminiService';
-import { AppStatus, AppViewMode, WorkspaceView, MediaType } from '../../types';
+import { buildGenerationContext } from '../../services/generationContextBuilder';
+import { generateDesignVisualization } from '../../services/designGeneration';
+import { AppStatus, AppViewMode } from '../../types';
 import { Button } from '@remodelvision/ui';
+import type { DesignSpecification, RenderingConfig } from '../../types/generation';
 
 // Simple Tooltip Component
 interface TooltipProps {
@@ -29,7 +32,7 @@ export const Sidebar = () => {
     setCaptureRequest, setModelUrl,
     projectContext, updateProjectContext,
     projects, activeProjectId, setViewMode, addNotification,
-    activePropertyMeta, workspaceView, setWorkspaceView,
+    activePropertyContext, selectedRoom, workspaceView, setWorkspaceView,
     generationConfig, updateGenerationConfig,
     activeMediaType, setActiveMediaType,
     addGeneratedResult
@@ -51,38 +54,97 @@ export const Sidebar = () => {
   // Listener for the canvas snapshot event
   useEffect(() => {
     const handleSnapshot = async (e: Event) => {
-      const customEvent = e as CustomEvent<string>;
-      const snapshotBase64 = customEvent.detail;
+      const customEvent = e as CustomEvent<any>;
+      const detail = customEvent.detail;
+      const snapshotBase64 = typeof detail === 'string' ? detail : detail.image;
+      const cameraState = typeof detail === 'object' ? detail.camera : null;
       
       try {
-        const result = await geminiService.generateMedia(
-          activeMediaType,
-          snapshotBase64, 
-          input || "Renovate this space", 
-          projectContext,
-          generationConfig,
-          activeProject?.config
-        );
-        
-        const newResult = {
-          id: Math.random().toString(36).substring(7),
-          originalImage: snapshotBase64,
-          generatedUrl: result.url,
-          thumbnailUrl: result.thumbnail,
-          type: activeMediaType,
-          prompt: input,
-          timestamp: Date.now()
-        };
+        // New Pipeline: Use Gemini 3 Generation Context if we have camera state and property context
+        if (activeMediaType === 'image' && cameraState && activePropertyContext) {
+           // Construct Design Spec from user input
+           const designSpec: DesignSpecification = {
+             style: activeProject?.config.style || 'Modern',
+             elements: {}, // Could parse input for specific element changes
+             preserveElements: [],
+             mood: ['warm', 'inviting']
+           };
 
-        addGeneratedResult(newResult); // Add to gallery and set as active
-        
-        addMessage({
-          role: 'model',
-          content: `I've generated a ${activeMediaType === 'video' ? 'cinematic walkthrough' : 'high-fidelity render'} based on your viewpoint and project style guide.`
-        });
-        setStatus(AppStatus.READY);
-        addNotification('success', 'Generation completed successfully');
+           // Construct Rendering Config from settings
+           const renderingConfig: RenderingConfig = {
+             lighting: {
+               time: 'afternoon',
+               style: 'natural'
+             },
+             camera: {
+               angle: 'eye-level',
+               focusDepth: 'deep'
+             },
+             quality: {
+               resolution: generationConfig.resolution === '4k' ? '4k' : '2k',
+               aspectRatio: generationConfig.aspectRatio as '16:9' | '4:3' | '1:1',
+               style: 'photorealistic'
+             }
+           };
+
+           // Build the full generation context from property data + camera state
+           const context = buildGenerationContext(
+             activePropertyContext,
+             cameraState,
+             selectedRoom || '',
+             designSpec,
+             {}, // references - could be populated from uploads
+             renderingConfig,
+             snapshotBase64
+           );
+
+           // Generate using Gemini 3 Pro Image - returns GeneratedResult directly
+           const generatedResult = await generateDesignVisualization(context, {
+             negativePrompt: 'blurry, distorted, unrealistic lighting'
+           });
+
+           // Add the generated result to the gallery
+           addGeneratedResult(generatedResult); 
+
+           addMessage({
+            role: 'model',
+            content: `I've generated a high-fidelity render based on your viewpoint and project style guide.`
+           });
+           setStatus(AppStatus.READY);
+           addNotification('success', 'Generation completed successfully');
+
+        } else {
+           // Legacy/Fallback Pipeline (or Video)
+            const result = await geminiService.generateMedia(
+              activeMediaType,
+              snapshotBase64, 
+              input || "Renovate this space", 
+              projectContext,
+              generationConfig,
+              activeProject?.config
+            );
+            
+            const newResult = {
+              id: Math.random().toString(36).substring(7),
+              originalImage: snapshotBase64,
+              generatedUrl: result.url,
+              thumbnailUrl: result.thumbnail,
+              type: activeMediaType,
+              prompt: input,
+              timestamp: Date.now()
+            };
+    
+            addGeneratedResult(newResult as any);
+            
+            addMessage({
+              role: 'model',
+              content: `I've generated a ${activeMediaType === 'video' ? 'cinematic walkthrough' : 'high-fidelity render'} based on your viewpoint and project style guide.`
+            });
+            setStatus(AppStatus.READY);
+            addNotification('success', 'Generation completed successfully');
+        }
       } catch (err) {
+        console.error("Generation failed:", err);
         addMessage({ role: 'system', content: "Failed to generate media. Please try again." });
         setStatus(AppStatus.ERROR);
         addNotification('error', 'Generation failed. Please check API connection.');
@@ -91,7 +153,7 @@ export const Sidebar = () => {
 
     window.addEventListener('canvas-snapshot', handleSnapshot);
     return () => window.removeEventListener('canvas-snapshot', handleSnapshot);
-  }, [input, projectContext, activeProject, activeMediaType, generationConfig, addGeneratedResult, addMessage, setStatus, addNotification]);
+  }, [input, projectContext, activeProject, activeMediaType, generationConfig, addGeneratedResult, addMessage, setStatus, addNotification, activePropertyContext, selectedRoom]);
 
   const handleSendMessage = async () => {
     if (!input.trim()) return;
