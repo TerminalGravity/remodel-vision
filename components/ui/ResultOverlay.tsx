@@ -1,0 +1,120 @@
+import React, { useState } from 'react';
+import { X, Download, Share2, ArrowLeftRight } from 'lucide-react';
+import { useStore } from '../../store/useStore';
+
+export const ResultOverlay = () => {
+  const { lastGeneratedResult, setGeneratedResult } = useStore();
+  const [sliderPosition, setSliderPosition] = useState(50);
+  const [isDragging, setIsDragging] = useState(false);
+
+  if (!lastGeneratedResult) return null;
+
+  const handleDrag = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ('touches' in e ? e.touches[0].clientX : e.clientX) - rect.left;
+    const percentage = Math.min(Math.max((x / rect.width) * 100, 0), 100);
+    setSliderPosition(percentage);
+  };
+
+  return (
+    <div className="absolute top-0 left-0 w-full h-full z-50 bg-black/90 flex items-center justify-center p-8 backdrop-blur-md">
+      <div className="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-2xl max-w-6xl w-full flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="flex justify-between items-center p-4 border-b border-slate-700 bg-slate-800">
+          <div>
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <ArrowLeftRight className="w-5 h-5 text-blue-400" />
+              Comparison View
+            </h2>
+            <p className="text-xs text-slate-400">Drag slider to compare original vs proposal</p>
+          </div>
+          <div className="flex gap-2">
+            <button className="flex items-center gap-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-sm text-white transition-colors">
+              <Share2 className="w-4 h-4" />
+              Share
+            </button>
+            <button className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded text-sm text-white transition-colors">
+              <Download className="w-4 h-4" />
+              Export
+            </button>
+            <div className="w-px h-8 bg-slate-700 mx-2" />
+            <button 
+              onClick={() => setGeneratedResult(null)}
+              className="p-2 hover:bg-red-500/20 hover:text-red-400 rounded-full text-slate-400 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content - Comparison Slider */}
+        <div className="flex-1 overflow-hidden relative bg-slate-950 select-none group">
+          <div 
+            className="w-full h-full relative cursor-col-resize"
+            onMouseMove={(e) => isDragging && handleDrag(e)}
+            onTouchMove={(e) => isDragging && handleDrag(e)}
+            onMouseDown={() => setIsDragging(true)}
+            onTouchStart={() => setIsDragging(true)}
+            onMouseUp={() => setIsDragging(false)}
+            onTouchEnd={() => setIsDragging(false)}
+            onMouseLeave={() => setIsDragging(false)}
+            onClick={handleDrag}
+          >
+             {/* Base Image (Generated/After) */}
+            <img 
+              src={lastGeneratedResult.generatedImage} 
+              alt="After" 
+              className="absolute top-0 left-0 w-full h-full object-contain" 
+            />
+            
+            {/* Overlay Image (Original/Before) - Clipped */}
+            <div 
+              className="absolute top-0 left-0 h-full w-full overflow-hidden"
+              style={{ width: `${sliderPosition}%` }}
+            >
+              <img 
+                src={lastGeneratedResult.originalImage} 
+                alt="Before" 
+                className="absolute top-0 left-0 max-w-none h-full w-full object-contain"
+                // Important: we need to ensure the image scales identically to the parent container
+                // using the parent's width, which is why we need `max-w-none` and explicit handling if aspect ratios differed.
+                // For this demo, assuming similar aspect ratios or object-contain on both works well.
+                 style={{ width: '100vw', maxWidth: '100%' }} // Approximation, in real app use explicit dimensions
+              />
+              {/* Force the inner image to match the container's full size even when clipped */}
+               <div className="absolute inset-0 border-r-2 border-white/50 shadow-[0_0_20px_rgba(0,0,0,0.5)]"></div>
+            </div>
+
+            {/* Slider Handle */}
+            <div 
+              className="absolute top-0 bottom-0 w-1 bg-white cursor-col-resize flex items-center justify-center shadow-[0_0_10px_rgba(0,0,0,0.5)] z-10 hover:bg-blue-400 transition-colors"
+              style={{ left: `${sliderPosition}%` }}
+            >
+              <div className="w-8 h-8 rounded-full bg-white text-slate-900 flex items-center justify-center shadow-lg border-2 border-slate-900">
+                <ArrowLeftRight className="w-4 h-4" />
+              </div>
+            </div>
+            
+            {/* Labels */}
+            <div className="absolute top-4 left-4 bg-black/60 text-white px-3 py-1 rounded text-sm font-bold backdrop-blur">
+              BEFORE
+            </div>
+            <div className="absolute top-4 right-4 bg-blue-600/90 text-white px-3 py-1 rounded text-sm font-bold backdrop-blur">
+              AFTER
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 bg-slate-800 border-t border-slate-700 flex justify-between items-center">
+          <p className="text-sm text-slate-300">
+            <span className="font-semibold text-blue-400">Prompt Used:</span> {lastGeneratedResult.prompt}
+          </p>
+          <div className="text-xs text-slate-500">
+            Generated by Nano Banana Pro
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

@@ -1,0 +1,8 @@
+{
+  "name": "RemodelVision",
+  "description": "Next-generation home renovation application fusing 3D spatial computing with Generative AI to visualize remodels using Gemini Nano Banana Pro.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
