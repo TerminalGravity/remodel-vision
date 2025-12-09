@@ -57,6 +57,8 @@ export enum AppViewMode {
   EDITOR = 'EDITOR'
 }
 
+export type WorkspaceView = 'DESIGN' | 'SETTINGS' | 'INTELLIGENCE';
+
 export interface GeneratedResult {
   originalImage: string; // Base64 of the 3D scene
   generatedImage: string; // URL/Base64 from Gemini

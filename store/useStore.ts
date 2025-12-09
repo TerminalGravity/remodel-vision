@@ -1,21 +1,25 @@
 import { create } from 'zustand';
-import { ChatMessage, AppStatus, GeneratedResult, Project, Notification, AppViewMode, PropertyMeta } from '../types';
+import { ChatMessage, AppStatus, GeneratedResult, Project, Notification, AppViewMode, PropertyMeta, WorkspaceView } from '../types';
 import { geminiService } from '../services/geminiService';
 
 interface AppState {
   // Navigation
   viewMode: AppViewMode;
   setViewMode: (mode: AppViewMode) => void;
+  workspaceView: WorkspaceView;
+  setWorkspaceView: (view: WorkspaceView) => void;
 
   // Projects (Multi-tenant simulation)
   projects: Project[];
   activeProjectId: string;
   setActiveProject: (id: string) => void;
+  updateProject: (projectId: string, updates: Partial<Project>) => void;
   updateProjectConfig: (projectId: string, updates: Partial<Project['config']>) => void;
   
   // Real Property Data
   activePropertyMeta: PropertyMeta | null;
   fetchPropertyMeta: (address: string) => Promise<void>;
+  updatePropertyMeta: (meta: PropertyMeta) => void;
 
   // Chat & AI State
   messages: ChatMessage[];
@@ -101,6 +105,9 @@ const INITIAL_PROJECTS: Project[] = [
 export const useStore = create<AppState>((set, get) => ({
   viewMode: AppViewMode.DASHBOARD,
   setViewMode: (mode) => set({ viewMode: mode }),
+  
+  workspaceView: 'DESIGN',
+  setWorkspaceView: (view) => set({ workspaceView: view }),
 
   projects: INITIAL_PROJECTS,
   activeProjectId: '1',
@@ -109,6 +116,7 @@ export const useStore = create<AppState>((set, get) => ({
     set({ 
       activeProjectId: id, 
       viewMode: AppViewMode.EDITOR,
+      workspaceView: 'DESIGN',
       messages: [{
         id: 'init',
         role: 'system',
@@ -128,6 +136,14 @@ export const useStore = create<AppState>((set, get) => ({
       get().fetchPropertyMeta(project.config.location.address);
     }
   },
+
+  updateProject: (projectId, updates) => set((state) => ({
+    projects: state.projects.map(p => 
+      p.id === projectId 
+        ? { ...p, ...updates, lastModified: Date.now() }
+        : p
+    )
+  })),
 
   updateProjectConfig: (projectId, updates) => set((state) => ({
     projects: state.projects.map(p => 
@@ -150,6 +166,7 @@ export const useStore = create<AppState>((set, get) => ({
       console.error(e);
     }
   },
+  updatePropertyMeta: (meta) => set({ activePropertyMeta: meta }),
 
   messages: [],
   status: AppStatus.IDLE,

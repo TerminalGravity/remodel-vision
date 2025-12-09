@@ -1,9 +1,26 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Send, Upload, Box, Sparkles, Loader2, User, Bot, Briefcase, ChevronLeft, Settings, Info, Building2 } from 'lucide-react';
+import { Send, Upload, Box, Sparkles, Loader2, User, Bot, Briefcase, ChevronLeft, Settings, Building2, Layout, Cuboid } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { geminiService } from '../../services/geminiService';
-import { AppStatus, AppViewMode } from '../../types';
-import { ProjectSettings } from './ProjectSettings';
+import { AppStatus, AppViewMode, WorkspaceView } from '../../types';
+
+// Simple Tooltip Component
+interface TooltipProps {
+  children?: React.ReactNode;
+  content: string;
+}
+
+const Tooltip = ({ children, content }: TooltipProps) => {
+  return (
+    <div className="relative group flex items-center">
+      {children}
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900 text-white text-[10px] rounded border border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+        {content}
+        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-700"></div>
+      </div>
+    </div>
+  );
+};
 
 export const Sidebar = () => {
   const { 
@@ -11,11 +28,10 @@ export const Sidebar = () => {
     setCaptureRequest, setModelUrl, 
     projectContext, updateProjectContext, setGeneratedResult,
     projects, activeProjectId, setViewMode, addNotification,
-    activePropertyMeta
+    activePropertyMeta, workspaceView, setWorkspaceView
   } = useStore();
   
   const [input, setInput] = useState('');
-  const [showSettings, setShowSettings] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const activeProject = projects.find(p => p.id === activeProjectId);
@@ -74,9 +90,19 @@ export const Sidebar = () => {
     
     // If asking to visualize, trigger capture
     if (currentInput.toLowerCase().includes('visualize') || currentInput.toLowerCase().includes('render') || currentInput.toLowerCase().includes('imagine')) {
-      setStatus(AppStatus.GENERATING_IMAGE);
-      addMessage({ role: 'system', content: `Capturing view... Applying "${activeProject?.config.style}" style filter.` });
-      setCaptureRequest(true); 
+      if (workspaceView !== 'DESIGN') {
+        setWorkspaceView('DESIGN');
+        // Give time for view to switch before capturing
+        setTimeout(() => {
+          setStatus(AppStatus.GENERATING_IMAGE);
+          addMessage({ role: 'system', content: `Capturing view... Applying "${activeProject?.config.style}" style filter.` });
+          setCaptureRequest(true); 
+        }, 500);
+      } else {
+        setStatus(AppStatus.GENERATING_IMAGE);
+        addMessage({ role: 'system', content: `Capturing view... Applying "${activeProject?.config.style}" style filter.` });
+        setCaptureRequest(true); 
+      }
     } else {
       // Normal chat
       const response = await geminiService.chat(messages.map(m => `${m.role}: ${m.content}`), currentInput);
@@ -91,6 +117,7 @@ export const Sidebar = () => {
     if (file.name.endsWith('.glb') || file.name.endsWith('.gltf')) {
       const url = URL.createObjectURL(file);
       setModelUrl(url);
+      setWorkspaceView('DESIGN');
       addMessage({ role: 'system', content: `Loaded 3D Model: ${file.name}` });
       addNotification('success', '3D Model loaded successfully');
     } else if (file.type.startsWith('image/')) {
@@ -118,65 +145,73 @@ export const Sidebar = () => {
 
   return (
     <>
-      <div className="w-[400px] h-full bg-slate-900 border-l border-slate-700 flex flex-col shadow-2xl z-20 flex-shrink-0 relative">
+      <div className="w-[400px] h-full bg-slate-900 border-l border-slate-700 flex flex-col shadow-2xl z-20 flex-shrink-0 relative transition-all">
         {/* Editor Header */}
-        <div className="p-4 border-b border-slate-700 bg-slate-800">
-          <button 
-            onClick={() => setViewMode(AppViewMode.DASHBOARD)}
-            className="flex items-center gap-1 text-xs text-slate-400 hover:text-white mb-3 transition-colors"
-          >
-            <ChevronLeft className="w-3 h-3" /> Back to Dashboard
-          </button>
-          
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-               <div className="w-10 h-10 rounded bg-gradient-to-br from-slate-700 to-slate-800 border border-slate-600 flex items-center justify-center">
-                  <Briefcase className="w-5 h-5 text-blue-400" />
-               </div>
-               <div>
-                 <h2 className="text-sm font-bold text-white leading-tight">{activeProject?.name}</h2>
-                 <p className="text-xs text-slate-400">{activeProject?.config.style}</p>
-               </div>
-            </div>
-            
+        <div className="bg-slate-800 border-b border-slate-700">
+          <div className="p-4 pb-2">
             <button 
-              onClick={() => setShowSettings(true)}
-              className="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors border border-transparent hover:border-slate-600"
-              title="Project Settings"
+              onClick={() => setViewMode(AppViewMode.DASHBOARD)}
+              className="flex items-center gap-1 text-xs text-slate-400 hover:text-white mb-3 transition-colors"
             >
-              <Settings className="w-4 h-4" />
+              <ChevronLeft className="w-3 h-3" /> Back to Dashboard
+            </button>
+            
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded bg-gradient-to-br from-slate-700 to-slate-800 border border-slate-600 flex items-center justify-center">
+                  <Briefcase className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-white leading-tight">{activeProject?.name}</h2>
+                <p className="text-xs text-slate-400">{activeProject?.config.style}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Workspace Navigation Tabs */}
+          <div className="flex px-4 gap-4 text-xs font-medium border-t border-slate-700/50">
+            <button 
+              onClick={() => setWorkspaceView('DESIGN')}
+              className={`flex items-center gap-2 py-3 border-b-2 transition-all ${workspaceView === 'DESIGN' ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400 hover:text-white'}`}
+            >
+              <Cuboid className="w-3.5 h-3.5" />
+              Studio
+            </button>
+            <button 
+              onClick={() => setWorkspaceView('SETTINGS')}
+              className={`flex items-center gap-2 py-3 border-b-2 transition-all ${workspaceView === 'SETTINGS' ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400 hover:text-white'}`}
+            >
+              <Settings className="w-3.5 h-3.5" />
+              Settings
+            </button>
+             <button 
+              onClick={() => setWorkspaceView('INTELLIGENCE')}
+              className={`flex items-center gap-2 py-3 border-b-2 transition-all ${workspaceView === 'INTELLIGENCE' ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-400 hover:text-white'}`}
+            >
+              <Building2 className="w-3.5 h-3.5" />
+              Data
             </button>
           </div>
         </div>
         
-        {/* Property Intelligence Card */}
-        {activePropertyMeta && (
+        {/* Property Intelligence Widget (Only show if not on Intelligence Page to save space) */}
+        {activePropertyMeta && workspaceView !== 'INTELLIGENCE' && (
           <div className="mx-4 mt-4 bg-slate-800/50 border border-slate-700 rounded-lg p-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-              <Building2 className="w-3 h-3 text-purple-400" />
-              Property Intelligence
+            <div className="flex items-center justify-between text-xs mb-2">
+               <div className="font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1">
+                 <Building2 className="w-3 h-3 text-purple-400" />
+                 Context
+               </div>
+               <span className="text-[10px] text-green-400 bg-green-900/20 px-1.5 py-0.5 rounded border border-green-900/50">Active</span>
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="bg-slate-900 rounded p-2">
-                <span className="text-slate-500 block">Zoning</span>
-                <span className="text-slate-200 font-medium">{activePropertyMeta.zoning}</span>
+              <div className="bg-slate-900 rounded p-1.5 px-2">
+                <span className="text-slate-500 block text-[10px]">Zoning</span>
+                <span className="text-slate-200">{activePropertyMeta.zoning}</span>
               </div>
-              <div className="bg-slate-900 rounded p-2">
-                <span className="text-slate-500 block">Lot Size</span>
-                <span className="text-slate-200 font-medium">{activePropertyMeta.lotSize}</span>
+               <div className="bg-slate-900 rounded p-1.5 px-2">
+                <span className="text-slate-500 block text-[10px]">Year Built</span>
+                <span className="text-slate-200">{activePropertyMeta.yearBuilt}</span>
               </div>
-              <div className="bg-slate-900 rounded p-2">
-                <span className="text-slate-500 block">Year Built</span>
-                <span className="text-slate-200 font-medium">{activePropertyMeta.yearBuilt}</span>
-              </div>
-              <div className="bg-slate-900 rounded p-2">
-                <span className="text-slate-500 block">Sun Exposure</span>
-                <span className="text-slate-200 font-medium">{activePropertyMeta.sunExposure}</span>
-              </div>
-            </div>
-            <div className="mt-2 pt-2 border-t border-slate-700 text-[10px] text-slate-500 flex justify-between">
-               <span>Walk Score: {activePropertyMeta.walkScore}</span>
-               <span className="italic">Data source: Gemini AI</span>
             </div>
           </div>
         )}
@@ -223,16 +258,21 @@ export const Sidebar = () => {
         <div className="p-4 bg-slate-800 border-t border-slate-700 space-y-3">
           {/* Tools */}
           <div className="flex gap-2">
-             <label className="flex items-center gap-2 text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-2 rounded-md cursor-pointer transition-colors border border-slate-600 hover:border-slate-500">
-              <Upload className="w-3 h-3" />
-              <span>Upload Plans</span>
-              <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
-            </label>
-            <label className="flex items-center gap-2 text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-2 rounded-md cursor-pointer transition-colors border border-slate-600 hover:border-slate-500">
-              <Box className="w-3 h-3" />
-              <span>Load GLB</span>
-              <input type="file" accept=".glb,.gltf" className="hidden" onChange={handleFileUpload} />
-            </label>
+             <Tooltip content="Upload Floorplan (PDF/Image)">
+               <label className="flex items-center gap-2 text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-2 rounded-md cursor-pointer transition-colors border border-slate-600 hover:border-slate-500">
+                <Upload className="w-3 h-3" />
+                <span>Plan</span>
+                <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+              </label>
+             </Tooltip>
+             
+             <Tooltip content="Upload 3D Scan (.glb)">
+              <label className="flex items-center gap-2 text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-2 rounded-md cursor-pointer transition-colors border border-slate-600 hover:border-slate-500">
+                <Box className="w-3 h-3" />
+                <span>Model</span>
+                <input type="file" accept=".glb,.gltf" className="hidden" onChange={handleFileUpload} />
+              </label>
+             </Tooltip>
           </div>
 
           {/* Text Input */}
@@ -255,9 +295,6 @@ export const Sidebar = () => {
           </div>
         </div>
       </div>
-      
-      {/* Settings Modal */}
-      {showSettings && <ProjectSettings onClose={() => setShowSettings(false)} />}
     </>
   );
 };
