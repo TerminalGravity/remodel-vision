@@ -1,6 +1,35 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store/useStore';
-import { X, Save, MapPin, Palette, DollarSign, Clock } from 'lucide-react';
+import { X, Save, MapPin, Palette, DollarSign, Clock, Image as ImageIcon } from 'lucide-react';
+
+const STYLE_REFERENCES: Record<string, { label: string, url: string }[]> = {
+  'Modern': [
+    { label: 'Minimalist Interior', url: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=300&q=80' },
+    { label: 'Clean Lines', url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=300&q=80' },
+    { label: 'Neutral Tones', url: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=300&q=80' }
+  ],
+  'Industrial Chic': [
+    { label: 'Exposed Brick', url: 'https://images.unsplash.com/photo-1515516969-d4008cc6241a?auto=format&fit=crop&w=300&q=80' },
+    { label: 'Metal Accents', url: 'https://images.unsplash.com/photo-1505577058444-a3dab90d4253?auto=format&fit=crop&w=300&q=80' },
+    { label: 'Raw Materials', url: 'https://images.unsplash.com/photo-1519710164239-da123dc03ef4?auto=format&fit=crop&w=300&q=80' }
+  ],
+  'Scandinavian': [
+    { label: 'Light Wood', url: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=300&q=80' },
+    { label: 'Cozy Textiles', url: 'https://images.unsplash.com/photo-1534349762230-e0cadf78f5da?auto=format&fit=crop&w=300&q=80' },
+    { label: 'Bright Spaces', url: 'https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=300&q=80' }
+  ],
+  'Coastal': [
+    { label: 'Breezy Whites', url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=300&q=80' },
+    { label: 'Ocean Blues', url: 'https://images.unsplash.com/photo-1499955085172-a104c9463ece?auto=format&fit=crop&w=300&q=80' },
+    { label: 'Natural Light', url: 'https://images.unsplash.com/photo-1615529182904-14819c35db37?auto=format&fit=crop&w=300&q=80' }
+  ],
+  // Fallback for others
+  'default': [
+    { label: 'Inspiration 1', url: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=300&q=80' },
+    { label: 'Inspiration 2', url: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4f9d?auto=format&fit=crop&w=300&q=80' },
+    { label: 'Inspiration 3', url: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=300&q=80' }
+  ]
+};
 
 export const ProjectSettings = ({ onClose }: { onClose: () => void }) => {
   const { activeProjectId, projects, updateProjectConfig, addNotification } = useStore();
@@ -69,6 +98,24 @@ export const ProjectSettings = ({ onClose }: { onClose: () => void }) => {
                 <option value="Traditional">Traditional</option>
                 <option value="Minimalist">Minimalist</option>
               </select>
+              
+              {/* Style References Preview */}
+              <div className="mt-3">
+                <div className="flex items-center gap-2 mb-2">
+                    <ImageIcon className="w-3 h-3 text-slate-500" />
+                    <span className="text-xs font-medium text-slate-400">Visual References</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                    {(STYLE_REFERENCES[config.style] ?? STYLE_REFERENCES['default'] ?? []).map((ref, i) => (
+                        <div key={i} className="relative aspect-square rounded-md overflow-hidden group border border-slate-700">
+                            <img src={ref.url} alt={ref.label} className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity" />
+                            <div className="absolute inset-0 bg-black/40 flex items-end p-1">
+                                <span className="text-[10px] text-white font-medium truncate">{ref.label}</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+              </div>
             </div>
 
             <div className="space-y-3">

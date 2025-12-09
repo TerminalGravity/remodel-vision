@@ -24,28 +24,28 @@ export const DollhouseScene = () => {
   }, [details]);
 
   // Calculate bounds to center the house if we have rooms
-  const houseCenterOffset = useMemo(() => {
+  const houseCenterOffset = useMemo((): [number, number, number] => {
     if (!hasRooms) return [0, 0, 0];
-    
+
     let minX = Infinity, maxX = -Infinity;
     let minZ = Infinity, maxZ = -Infinity;
-    
+
     rooms.forEach(room => {
         if (!room.position) return;
         const w = room.dimensions?.width || 0;
         const l = room.dimensions?.length || 0;
-        
+
         minX = Math.min(minX, room.position.x);
         maxX = Math.max(maxX, room.position.x + w);
         minZ = Math.min(minZ, room.position.z);
         maxZ = Math.max(maxZ, room.position.z + l);
     });
-    
+
     if (minX === Infinity) return [0, 0, 0];
-    
+
     const centerX = (minX + maxX) / 2;
     const centerZ = (minZ + maxZ) / 2;
-    
+
     return [-centerX, 0, -centerZ];
   }, [rooms, hasRooms]);
 

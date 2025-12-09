@@ -97,9 +97,7 @@ export const RoomMesh: React.FC<RoomMeshProps> = ({ layout, name, type, onClick 
       // We need to rotate it to stand up and align with the wall segment.
       // Initial shape is in XY plane.
       
-      const angle2D = Math.atan2(wall.end.y - wall.start.y, wall.end.x - wall.start.x);
-      
-      geometry.rotateY(-angle2D); 
+      geometry.rotateY(-angle); 
       geometry.translate(wall.start.x, 0, wall.start.y); // Map 2D Y to 3D Z
 
       return geometry;
@@ -133,10 +131,14 @@ export const RoomMesh: React.FC<RoomMeshProps> = ({ layout, name, type, onClick 
         <mesh rotation={[-Math.PI/2, 0, 0]} receiveShadow>
              <shapeGeometry args={[useMemo(() => {
                  const s = new THREE.Shape();
-                 if (walls.length > 0) {
-                     s.moveTo(walls[0].start.x, walls[0].start.y);
+                 const firstWall = walls[0];
+                 if (walls.length > 0 && firstWall) {
+                     s.moveTo(firstWall.start.x, firstWall.start.y);
                      for (let i = 1; i < walls.length; i++) {
-                         s.lineTo(walls[i].start.x, walls[i].start.y);
+                         const wall = walls[i];
+                         if (wall) {
+                             s.lineTo(wall.start.x, wall.start.y);
+                         }
                      }
                  }
                  return s;

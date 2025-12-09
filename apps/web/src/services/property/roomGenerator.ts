@@ -97,22 +97,22 @@ export function generateRoomsFromDetails(details: PropertyDetails): RoomContext[
     
     // Track Z position for two columns
     // colZ[0] is for Left Column, colZ[1] is for Right Column
-    const colZ = [0, 0];
-    
+    const colZ: [number, number] = [0, 0];
+
     floorRooms.forEach((roomTemplate, index) => {
       // Calculate target area
       const weight = roomTemplate.weight / totalWeight;
       const roomArea = sqftPerStory * weight;
-      
+
       // Assign column (alternating)
-      const colIndex = index % 2; 
-      
+      const colIndex = (index % 2) as 0 | 1;
+
       // Dimensions
       // Width is fixed to column width
       // Length is calculated from area
       const roomWidth = colWidth;
       const roomLength = roomArea / roomWidth;
-      
+
       // Position
       // X: 0 or colWidth
       // Y: based on floor level
@@ -120,7 +120,7 @@ export function generateRoomsFromDetails(details: PropertyDetails): RoomContext[
       const x = colIndex === 0 ? 0 : colWidth;
       const y = (floor.level - 1) * CEILING_HEIGHT;
       const z = colZ[colIndex];
-      
+
       // Update Z cursor for this column
       colZ[colIndex] += roomLength;
 
