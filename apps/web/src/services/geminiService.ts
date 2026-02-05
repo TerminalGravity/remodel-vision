@@ -261,8 +261,25 @@ export const geminiService = {
       });
 
       const text = response.text || "{}";
-      const jsonStr = text.replace(/```json|```/g, '').trim();
-      return JSON.parse(jsonStr) as GroundingData;
+      // Clean markdown code blocks and extract JSON
+      let jsonStr = text.replace(/```json|```/g, '').trim();
+
+      // Try to extract JSON object if mixed with text
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        jsonStr = jsonMatch[0];
+      }
+
+      try {
+        return JSON.parse(jsonStr) as GroundingData;
+      } catch (parseError) {
+        console.warn("Grounding returned non-JSON, attempting extraction:", text.substring(0, 100));
+        // Return partial data if we can't parse
+        return {
+          address: address,
+          neighborhoodVibe: text.substring(0, 200) // Use raw text as neighborhood description
+        };
+      }
     } catch (error) {
       console.error("Grounding data fetch failed", error);
       return {};
@@ -270,19 +287,38 @@ export const geminiService = {
   },
 
   /**
-   * Chat with "Thinking" capability for GC-level analysis.
+   * Chat with optional image attachments for multimodal context.
+   * Supports "Thinking" capability for GC-level analysis.
+   * Images are passed as base64 strings (without data URI prefix).
    */
-  chat: async (history: string[], newMessage: string, thinkingMode: boolean = false) => {
+  chat: async (history: string[], newMessage: string, thinkingMode: boolean = false, images?: string[]) => {
     try {
       const model = thinkingMode ? MODEL_THINKING : MODEL_FAST;
-      
+
+      // Build parts array - text first, then any images
+      const parts: Array<{ text?: string; inlineData?: { mimeType: string; data: string } }> = [];
+
+      // Add text content
+      const textPrompt = `Previous context: ${history.join('\n')}\nUser: ${newMessage}\n\n${thinkingMode ? "Act as a General Contractor. Analyze building codes, costs, and feasibility deeply." : ""}`;
+      parts.push({ text: textPrompt });
+
+      // Add image attachments if provided
+      if (images && images.length > 0) {
+        for (const imageBase64 of images) {
+          // Clean base64 if it has data URI prefix
+          const cleanBase64 = imageBase64.replace(/^data:image\/[^;]+;base64,/, '');
+          parts.push({
+            inlineData: {
+              mimeType: 'image/jpeg',
+              data: cleanBase64
+            }
+          });
+        }
+      }
+
       const response = await ai.models.generateContent({
         model: model,
-        contents: {
-            parts: [{ 
-                text: `Previous context: ${history.join('\n')}\nUser: ${newMessage}\n\n${thinkingMode ? "Act as a General Contractor. Analyze building codes, costs, and feasibility deeply." : ""}` 
-            }]
-        }
+        contents: { parts }
       });
       return response.text;
     } catch (error) {

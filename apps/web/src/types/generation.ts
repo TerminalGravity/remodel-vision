@@ -241,6 +241,11 @@ export interface GeneratedResult {
     seed?: number;
     resolution?: string;
     aspectRatio?: string;
+    // Usage metrics from API response
+    tokensUsed?: number;
+    promptTokens?: number;
+    completionTokens?: number;
+    estimatedCost?: number;
   };
 
   // Compatibility fields for existing UI components

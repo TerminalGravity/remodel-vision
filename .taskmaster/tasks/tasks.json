@@ -1,0 +1,1377 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "Project Setup and Core Data Schema Definition",
+        "description": "Initialize the frontend application using the specified tech stack (React, Vite, TypeScript) and define the core data structures for the entire platform as per PRD-008.",
+        "details": "Use `create-vite` to scaffold a new React + TypeScript project. Install specified dependencies: Tailwind CSS, Zustand, Lucide React, Three.js, and @react-three/fiber. Create a `src/types` or `src/schemas` directory. Define TypeScript interfaces for `PropertyContext`, `MeasurementSet`, `DesignRevision`, and `AssetReference`. These interfaces will form the backbone of the application's state and API contracts. Example schema for PropertyContext: `interface PropertyContext { id: string; address: string; measurements: MeasurementSet[]; documents: AssetReference[]; designHistory: DesignRevision[]; }`",
+        "testStrategy": "Unit tests for schema validation utilities. Type checking with TypeScript compiler (tsc) should pass without errors. The Vite development server should start successfully, rendering a basic placeholder component.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T18:23:06.442Z"
+      },
+      {
+        "id": "2",
+        "title": "Implement Unified Context Store with Zustand",
+        "description": "Set up and configure the Zustand global state management store to handle the application's unified context, including PropertyContext, ProjectConfig, and DesignHistory.",
+        "details": "Create a Zustand store in `src/store/contextStore.ts`. The store will manage the state for the core data structures defined in Task 1. It should include state slices for `propertyContext`, `activeProjectId`, and `designHistory`. Implement actions to update the state, such as `setPropertyContext(data)`, `addDesignRevision(revision)`, and `switchProject(projectId)`. The store should be designed to be context-preserving across user sessions, potentially using Zustand's persistence middleware with localStorage.",
+        "testStrategy": "Unit test the Zustand store's actions and selectors. Verify that state changes are correctly propagated. Test the persistence middleware by reloading the application and ensuring the state is restored.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T18:23:49.007Z"
+      },
+      {
+        "id": "3",
+        "title": "Develop Property Context Intelligence Service",
+        "description": "Create a service module to fetch and structure property data using the Firecrawl API for web crawling, enriching the PropertyContext.",
+        "details": "Implement an API client or serverless function to interact with the Firecrawl API. This service will accept a property address, trigger a crawl job on relevant sites (e.g., Zillow, Redfin), and parse the returned data. The parsed data (e.g., square footage, room count, listing photos) will be structured according to the `PropertyContext` schema and used to update the Zustand store. Securely manage the Firecrawl API key using environment variables.",
+        "testStrategy": "Integration tests mocking the Firecrawl API to ensure correct data parsing and structuring. Test the service's error handling for failed API calls. End-to-end test by providing an address in the UI and verifying the Zustand store is updated with the crawled data.",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "2"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T18:24:13.140Z"
+      },
+      {
+        "id": "4",
+        "title": "Integrate Gemini AI Service Layer",
+        "description": "Build a generic, reusable service to communicate with the Google Gemini AI models for text and vision tasks, as specified in PRD-003.",
+        "details": "Create a service class or set of functions (`src/services/geminiService.ts`) to handle API requests to the Google AI platform. Use the `gemini-2.5-flash` model for chat and vision analysis. The service should expose methods like `generateText(prompt, context)` and `analyzeImage(imageUrl, prompt)`. It will take the structured `PropertyContext` from the Zustand store as part of the input to provide context to the AI, ensuring precise outputs. Manage API keys securely.",
+        "testStrategy": "Unit tests with mocked API responses to verify the service correctly formats requests and parses responses. Integration tests that make live (sandboxed) calls to the Gemini API to validate authentication and basic functionality.",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "2"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T18:24:41.195Z"
+      },
+      {
+        "id": "5",
+        "title": "Implement Image Generation Pipeline with Gemini Pro Image",
+        "description": "Integrate the `gemini-3-pro-image-preview` model (referred to as Nano Banana Pro) to generate photorealistic interior and exterior designs based on property context and user prompts.",
+        "details": "Extend the Gemini AI service from Task 4 or create a new dedicated service for image generation. This module will construct detailed prompts by combining user input (e.g., 'modern kitchen with marble countertops') with the structured `PropertyContext` (e.g., room dimensions, window placements). The service will call the Gemini image generation endpoint and handle the response, storing the generated image URL in the `DesignRevision` schema within the Zustand store.",
+        "testStrategy": "Test the prompt construction logic to ensure it correctly merges user input and property context. Integration tests to call the image generation API and verify that an image is returned. UI-level testing to ensure the generated image is displayed correctly to the user.",
+        "priority": "high",
+        "dependencies": [
+          "2",
+          "4"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T18:25:05.565Z"
+      },
+      {
+        "id": "6",
+        "title": "Set Up Basic 3D Dollhouse Viewer with Three.js",
+        "description": "Create the initial 3D visualization component to render a property's layout as a 'dollhouse' view using React Three Fiber and Three.js.",
+        "details": "Develop a React component (`<DollhouseCanvas />`) that uses `@react-three/fiber` to set up a 3D scene. This component will read the `PropertyContext`, specifically `MeasurementSet`, from the Zustand store. It will dynamically generate and render basic 3D geometry (e.g., `Box` geometries for walls and floors) based on these measurements. Implement basic camera controls (`@react-three/drei`'s `OrbitControls`) to allow users to navigate the 3D space.",
+        "testStrategy": "Component tests to verify that the 3D scene renders without errors. Snapshot testing to catch unintended visual changes. Manually test the 3D navigation and verify that the rendered layout correctly corresponds to sample `PropertyContext` data.",
+        "priority": "medium",
+        "dependencies": [
+          "1",
+          "2"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T18:25:33.598Z"
+      },
+      {
+        "id": "7",
+        "title": "Develop Source Document Ingestion and Processing",
+        "description": "Build the UI and backend pipeline for users to upload source documents (PDFs, images) and have AI extract relevant information to enrich the PropertyContext.",
+        "details": "Create a file upload component in the UI. On the backend (e.g., a serverless function), use a library like `pdf-parse` for PDFs and the Gemini vision model (from Task 4) for OCR on images. The extracted text and data will be processed to identify measurements, features, and other details. This structured information will then be used to update the `PropertyContext` in the Zustand store.",
+        "testStrategy": "Unit test the parsing logic for different document types. Integration test the full pipeline: upload a sample PDF (e.g., a floor plan) and verify that the correct measurements are extracted and updated in the application's state. Test handling of various file formats and sizes.",
+        "priority": "medium",
+        "dependencies": [
+          "2",
+          "4"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T18:26:01.239Z"
+      },
+      {
+        "id": "8",
+        "title": "Scaffold Project Management and Revision History UI",
+        "description": "Create the initial UI components for the Project Management module, including a timeline view and a system for tracking design revisions.",
+        "details": "Using React and Tailwind CSS, build components for displaying project milestones and a list of design revisions. These components will be read-only initially, sourcing their data from the `DesignRevision` and `ProjectConfig` slices of the Zustand store. Implement a simple UI to navigate between different saved design generations (from Task 5) to allow for before/after comparisons.",
+        "testStrategy": "Component-level tests using a testing library like Vitest or React Testing Library to verify that the UI correctly renders data from a mock Zustand store. Manually test the UI to ensure it's responsive and accurately reflects the state.",
+        "priority": "low",
+        "dependencies": [
+          "2",
+          "5"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T18:26:31.791Z"
+      },
+      {
+        "id": "9",
+        "title": "Expand MeasurementSet Schema for Detailed 3D Geometry",
+        "description": "Implement the complete `MeasurementSet` schema as specified in PRD-008, expanding the existing TypeScript interfaces to include detailed structures for walls, openings, features, and clearances. This enhancement is critical for enabling accurate 3D geometry generation and material estimation.",
+        "details": "Update the `apps/web/src/types/measurements.ts` file to fully align with the PRD-008 specification. This involves defining and exporting the following TypeScript interfaces: `WallMeasurement` (including `direction: Vector3`, `thickness: number`, `isLoadBearing: boolean`), `OpeningMeasurement` (with `position: Vector2`, `width: number`, `height: number`, `swingDirection: 'in' | 'out' | 'slide'`, `connectsTo: string[]`), `FeatureMeasurement` (for non-structural elements like cabinets or appliances, with `position: Vector3`, `dimensions: Vector3`, `type: string`), and `ClearanceMeasurement` (defining required empty space with `shape: 'box' | 'cylinder'`, `dimensions`, `position`). The main `MeasurementSet` interface should be updated to use these new, more precise types instead of the current basic version.",
+        "testStrategy": "Verify the implementation by ensuring the TypeScript compiler (`tsc`) passes without any type errors across the entire codebase. Create or update unit tests for any utility functions that parse or manipulate `MeasurementSet` data to ensure they correctly handle the new detailed structures. As an integration test, temporarily modify the `DollhouseCanvas` component (from Task 6) to accept a mock `PropertyContext` with the new detailed `MeasurementSet` and confirm that it can access the new fields (e.g., `wall.isLoadBearing`) without runtime errors, even if the rendering logic isn't fully updated yet.",
+        "status": "done",
+        "dependencies": [
+          "1",
+          "2"
+        ],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2025-12-13T00:54:10.791Z"
+      },
+      {
+        "id": "10",
+        "title": "Expand DesignRevision Schema to Full DesignVersion Specification",
+        "description": "Update the core `DesignRevision` TypeScript interface to the comprehensive `DesignVersion` schema as specified in PRD-008. This change introduces detailed fields for generation context, output specifications, user feedback, and versioning relationships.",
+        "details": "In the file `apps/web/src/types/design.ts`, rename and expand the existing `DesignRevision` interface to `DesignVersion`. This involves adding the following structured properties: `generationContext` (prompt, enhancedPrompt, viewportCapture, model, duration), `outputDetails` (image, thumbnail, resolution, format), `specifications` (style, colorPalette, materials array with `MaterialSpec`, products array with `ProductReference`, estimatedCost), `userFeedback` (rating 1-5, isFavorite, isApproved, approvedBy, approvedAt, notes, tags), and `versionRelationships` (parentVersion, childVersions). Define any necessary supporting interfaces such as `MaterialSpec` and `ProductReference` within the same file or a related types module. Ensure all new fields are typed correctly according to PRD-008, using optional properties where appropriate.",
+        "testStrategy": "Compile the entire project with `tsc --noEmit` to ensure there are no new type errors introduced by the schema change. Update all references to the old `DesignRevision` type across the codebase, particularly in the Zustand store (Task 2), the image generation service (Task 5), and the revision history UI (Task 8), to use the new `DesignVersion` type. Create a mock `DesignVersion` object with all new fields populated and use it in unit tests for any components or functions that consume this data to verify they handle the new structure correctly. Integration tests should be updated to check that the image generation pipeline correctly populates the new `generationContext` and `outputDetails` fields.",
+        "status": "done",
+        "dependencies": [
+          "1",
+          "2"
+        ],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2025-12-13T00:55:33.890Z"
+      },
+      {
+        "id": "11",
+        "title": "Implement Full SourceDocument Schema",
+        "description": "Expand the current simplified source document reference to the full `SourceDocument` schema as specified in PRD-008. This includes detailed tracking for file info, classification, processing status, extraction data, and metadata.",
+        "details": "In the file `apps/web/src/types/source.ts`, define and export the `SourceDocument` interface. This interface must include: `fileInfo` (with `name`, `type`, `size`, `extension`, `hash` for deduplication); `classification` (with `documentType: DocumentType` enum, `confidence: number`, `detectedAt: Date`); `processing` (with `status: 'pending' | 'processing' | 'completed' | 'failed'`, timing details, `retryCount: number`); `extraction` (with `rawText: string`, `structuredData: Partial<PropertyContext>`, per-field confidence scores, an `ExtractionAnnotation[]` array with bounding boxes, and a `needsReview: boolean` flag); and `metadata` (with `uploadedAt: Date`, `uploadedBy: string`, `source: string`, `originalUrl?: string`, `notes?: string`). Also define the supporting `ExtractionAnnotation` type.",
+        "testStrategy": "Ensure the project compiles without type errors using `tsc --noEmit`. Refactor the document ingestion pipeline from Task 7 to utilize the new `SourceDocument` schema instead of the previous simplified reference. Update unit and integration tests for the ingestion service to verify that documents are processed correctly and that all fields of the new schema (e.g., processing status, extraction data, metadata) are populated as expected. Manually test the upload feature to confirm end-to-end functionality with the expanded data model.",
+        "status": "done",
+        "dependencies": [
+          "1",
+          "7"
+        ],
+        "priority": "medium",
+        "subtasks": [],
+        "updatedAt": "2025-12-13T00:57:42.362Z"
+      },
+      {
+        "id": "12",
+        "title": "Implement Full ProjectConfig Schema",
+        "description": "Expand the basic ProjectConfig implementation to the full, detailed schema as specified in PRD-008. This includes comprehensive structures for client information, project status, design preferences (DesignDNA), budget, scope, constraints, and team contacts.",
+        "details": "In the file `apps/web/src/types/project.ts`, expand the existing `ProjectConfig` interface to include the full schema as defined in PRD-008. This involves defining and exporting the following structures: client info (name, email, phone, notes); enums for `ProjectStatus` and `ProjectPhase`; a `DesignDNA` object containing `primaryStyle`, `secondaryStyle`, `colorTemperature`, a `colorPalette` object (with `primary`, `accent`, `neutral` string arrays), `materialPreferences` (for `wood`, `stone`, `metal`, `fabric`), `aestheticKeywords`, `avoidKeywords`, and an array of `inspirationImages`; a `Budget` section with a `BudgetTier` enum, `total` amount, a `breakdown` object, `priorityAreas`, and `flexibleAreas`; a `Scope` object with an array of `rooms`, where each room has a `type` enum, `workTypes`, and `excludedWork`; a `Constraints` object detailing `timeline`, `occupancy`, `noise_restrictions`, `access`, `permits`, `hoa`, and `other` notes; and an array for `teamContacts`.",
+        "testStrategy": "Ensure the project compiles without type errors using `tsc --noEmit`. Update the `ProjectConfig` slice in the Zustand store (from Task 2) to conform to the new, expanded interface. Refactor any components that currently consume `ProjectConfig` data, such as the Project Management UI (from Task 8), to correctly display the new detailed fields. Create unit tests for any new utility functions that parse or manipulate the `ProjectConfig` object to verify they handle the nested structures correctly.",
+        "status": "done",
+        "dependencies": [
+          "1",
+          "2"
+        ],
+        "priority": "medium",
+        "subtasks": [],
+        "updatedAt": "2025-12-13T00:59:51.476Z"
+      },
+      {
+        "id": "13",
+        "title": "Implement Zod Validation Schemas for Core Data Structures",
+        "description": "Create comprehensive Zod schemas for runtime validation of core data structures as specified in PRD-008. This will enforce type safety at API boundaries and for user inputs, preventing invalid data from entering the system.",
+        "details": "Create a new file at `apps/web/src/lib/validation/schemas.ts`. In this file, implement and export Zod schemas that correspond to the full TypeScript interfaces for: `MeasurementSchema` (from `MeasurementSet`), `RoomContextSchema`, `PropertyContextSchema`, `ProjectConfigSchema`, `DesignVersionSchema`, and `SourceDocumentSchema`. The schemas must be exhaustive, matching all fields, types, and constraints defined in the latest interface definitions. Also, implement and export a helper function `validatePropertyContext(data: unknown): PropertyContext` which uses the corresponding Zod schema to safely parse and validate unknown input, throwing a `ZodError` if the data is invalid.",
+        "testStrategy": "Create a corresponding test file `schemas.test.ts`. For each exported Zod schema, write unit tests covering both success and failure cases. Use `schema.parse()` with valid data objects to assert that no error is thrown. Use invalid data objects (e.g., missing required fields, incorrect data types, empty strings) to assert that a `ZodError` is thrown. Specifically test the `validatePropertyContext` helper function to ensure it returns the correctly typed data on success and throws an error on failure. As an integration test, import and apply one of the schemas in a mock API handler or form submission logic to verify its runtime validation capabilities.",
+        "status": "done",
+        "dependencies": [
+          "9",
+          "10",
+          "11",
+          "12"
+        ],
+        "priority": "medium",
+        "subtasks": [],
+        "updatedAt": "2025-12-13T01:03:07.606Z"
+      },
+      {
+        "id": "14",
+        "title": "Implement Enhanced Zustand Persistence Strategy",
+        "description": "Enhance the Zustand store's persistence middleware with a comprehensive strategy including partialization, schema versioning with migration, and IndexedDB storage to support large datasets and future-proof the application state.",
+        "details": "Update the Zustand persistence configuration in `apps/web/src/store` to align with the `PersistenceConfig` interface from PRD-008. First, implement the `partialize` function to selectively persist only the necessary state slices: `projects`, `properties`, `designHistory`, and `userPreferences`, ignoring transient UI state. Second, introduce schema versioning by setting a `version` number and implementing a `migrate` function; this function will handle transformations of the persisted state between different schema versions, which is critical for accommodating changes from tasks 10, 11, and 12. Third, replace the default `localStorage` with an IndexedDB-based storage solution (e.g., using `idb-keyval` to create a custom storage object) to handle larger data volumes efficiently. Finally, stub out the configuration for sync triggers (e.g., on save, on a timer, when online) to prepare for future cloud synchronization features.",
+        "testStrategy": "Verify the `partialize` function by inspecting the stored data in IndexedDB using browser developer tools, ensuring only the specified state slices are present. Test persistence by modifying the state, reloading the application, and confirming the state is correctly restored. To test migration, manually inject an older version of the state schema into IndexedDB, then load the application and verify that the `migrate` function executes and successfully transforms the state to the current schema, using the Zod schemas from Task 13 for validation. Confirm the application compiles without errors using `tsc --noEmit`.",
+        "status": "done",
+        "dependencies": [
+          "2",
+          "10",
+          "11",
+          "12",
+          "13"
+        ],
+        "priority": "low",
+        "subtasks": [],
+        "updatedAt": "2025-12-13T01:06:12.389Z"
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2025-12-13T01:06:12.390Z",
+      "taskCount": 14,
+      "completedCount": 14,
+      "tags": [
+        "master"
+      ]
+    }
+  },
+  "prd-001": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Project Setup and Core Data Schema Implementation",
+        "description": "Establish the foundational data structures for PropertyContext and RoomContext as defined in the PRD. Set up the Zustand store for managing application state.",
+        "details": "Create TypeScript files (`src/types/property.ts`, `src/types/room.ts`) to define the `PropertyContext`, `RoomContext`, `MeasurementSet`, and all related interfaces exactly as specified in the PRD. Initialize a Zustand store (`src/store/propertyStore.ts`) with an initial state for an array of `PropertyContext` objects and actions to add, update, select, and manage properties.",
+        "testStrategy": "Unit tests to validate that all TypeScript interfaces match the PRD schema precisely. Write unit tests for the Zustand store actions (e.g., `addProperty`, `updateProperty`, `setActiveProperty`) to ensure state changes are predictable and correct.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Implement Address-Based Property Discovery Service",
+        "description": "Create a backend service that uses Firecrawl to scrape property data from multiple public sources (Zillow, Redfin, etc.) based on a given address, as per FR-001.",
+        "details": "Implement the `fetchPropertyData` function in a new backend service file (`services/propertyDataService.ts`) using the `@mendable/firecrawl-js` library. Define the `PROPERTY_SOURCES` array with URL patterns and extraction schemas for Zillow, Redfin, County Assessor, and School Digger. Implement a `mergePropertyData` function to intelligently combine results, prioritizing sources as listed in the PRD. Include a fallback mechanism using Gemini to estimate key fields if scraping fails. API keys must be managed securely via environment variables.",
+        "testStrategy": "Write integration tests that mock the Firecrawl API to verify the service constructs correct URLs and schemas for scraping. Unit test the `mergePropertyData` function to ensure it correctly combines and prioritizes data from mock sources. Test the Gemini fallback logic is triggered when mock scraping fails.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Create API Endpoint for Property Discovery",
+        "description": "Expose the property discovery service via a secure, server-side API endpoint that the frontend can call to initiate the data farming process.",
+        "details": "Create a new API route, e.g., `POST /api/properties/discover`. This endpoint will accept a JSON body with an `address` string. It will invoke the `propertyDataService.fetchPropertyData` function. Upon successful data retrieval, it will create a new `PropertyContext` record in the database and return the newly created property object to the client with a 201 status code. Implement robust error handling for invalid addresses or scraping failures.",
+        "testStrategy": "Use an API testing tool like Postman or Jest/supertest to test the endpoint. Verify the success case with a valid address returns a 201 status and a property object. Test failure cases like a missing address (400), an un-discoverable address (404), and a simulated internal server error (500).",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Build Frontend for Property Portfolio Management",
+        "description": "Develop the user interface for managing a portfolio of properties, including adding a new property via address, listing existing properties, and switching between them, as specified in FR-005.",
+        "details": "Create React components for the portfolio view. This includes a 'Property List' component that renders properties from the Zustand store. Implement an 'Add Property' form that calls the `/api/properties/discover` endpoint. On success, it will add the new property to the Zustand store. Implement the quick-switch dropdown in the application header that updates the active property in the store, enabling a context switch in under 500ms.",
+        "testStrategy": "Use React Testing Library to test the components. Verify the property list renders correctly based on store state. Test the 'Add Property' flow by mocking the API call and asserting that the Zustand store is updated correctly. Test that the quick-switch dropdown successfully changes the active property state.",
+        "priority": "high",
+        "dependencies": [
+          1,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Implement Backend Document Processing Pipeline",
+        "description": "Create a backend service to handle user-uploaded documents (PDFs, images), process them using Gemini Vision, and extract structured data according to FR-002.",
+        "details": "Create an API endpoint `POST /api/properties/{propertyId}/documents`. This endpoint must handle multipart/form-data file uploads. Implement the `processDocument` function as outlined in the PRD. This function will convert the file to a base64 string and send it to a Gemini service wrapper with a detailed prompt for JSON extraction. The service will parse the JSON response and store the extracted data temporarily for user review. Uploaded files should be stored securely (e.g., in S3).",
+        "testStrategy": "Write integration tests that upload sample documents (a floor plan PDF, an inspection report) to the endpoint. Mock the Gemini API call to control its response and verify that the service correctly processes the file and returns structured JSON. Test error handling for unsupported file types or failed Gemini analysis.",
+        "priority": "medium",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Develop Document Upload and Review Interface",
+        "description": "Build the frontend components for uploading documents and reviewing the AI-extracted data, allowing users to confirm or correct information before it's saved to the PropertyContext.",
+        "details": "Create a drag-and-drop file upload component using a library like `react-dropzone`. On file upload, call the endpoint from Task 5 and display a loading state. On success, render a 'Review & Confirm' UI that lists the key-value pairs extracted by the AI with inputs for correction. A 'Save All' button will send the confirmed data to a `PUT /api/properties/{propertyId}` endpoint to merge it into the main `PropertyContext` object.",
+        "testStrategy": "Component testing for the upload and review UIs. Mock the API calls to simulate the upload, processing, and save flows. Ensure the UI correctly displays extracted data from a mock response and that user corrections are captured and sent in the final save request.",
+        "priority": "medium",
+        "dependencies": [
+          4,
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Implement Measurement Capture System",
+        "description": "Develop the backend models and frontend UI for capturing, storing, and displaying detailed room measurements as per FR-003 and the MeasurementSet schema.",
+        "details": "On the backend, ensure the database schema can store the `MeasurementSet` structure, likely as a JSONB field. On the frontend, create a 'Room Details' page with a form for manually entering measurements for a room's dimensions, features, and openings. The form must support unit conversion (e.g., ft/in to a standard internal unit like inches) and include validation for impossible dimensions (e.g., window wider than wall).",
+        "testStrategy": "Unit test the unit conversion and validation logic. Use React Testing Library to test the measurement entry form, ensuring data binding, submission, and validation messages work correctly. Conduct an end-to-end test: add a room, enter measurements, save, and verify the data is correctly persisted and displayed upon reload.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Implement and Integrate Context Injection Engine",
+        "description": "Create the context injection engine that dynamically builds prompts for AI interactions by including relevant property data, as detailed in FR-004.",
+        "details": "Implement the `buildContextualPrompt` function as specified in the PRD's pseudo-code. This utility will accept the user's prompt, the `PropertyContext`, an optional `RoomContext`, and an `InjectionLevel`. Refactor all existing services that call the Gemini AI to first process prompts through this function. On the frontend, add a UI toggle to enable/disable context injection, which will control the `InjectionLevel` parameter.",
+        "testStrategy": "Write comprehensive unit tests for the `buildContextualPrompt` function, testing each injection level to ensure it includes the correct data and formats it properly. Test token usage optimization to ensure it truncates large contexts gracefully. In an integration test, verify that the final prompt sent to the Gemini API is correctly modified when injection is enabled.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          5,
+          7
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-12-09T08:24:22.655Z",
+      "updated": "2025-12-09T08:25:22.234Z",
+      "description": "Tasks for prd-001 context"
+    }
+  },
+  "prd-002": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Implement PropertyContext-Driven Geometry Generation Service",
+        "description": "Create a service that translates room data from `PropertyContext` into Three.js mesh objects. This service will be the core of the dollhouse visualization, generating floors, walls with openings, and ceilings based on structured measurements.",
+        "details": "Implement the `generateRoomGeometry` function in `services/geometryGenerator.ts` as outlined in FR-001. The function should accept a `RoomContext` object and return a `GeneratedRoom` object containing meshes, a bounding box, and other metadata. Start by creating simple `THREE.PlaneGeometry` for floors/ceilings and `THREE.BoxGeometry` or extruded shapes for walls. Implement logic to carve out openings for doors and windows based on the `openings` array. Use CSG (Constructive Solid Geometry) libraries like `three-bsp-csg` if needed for robust opening creation. Ensure a fallback to placeholder geometry if `room.measurements` data is incomplete.",
+        "testStrategy": "Unit test the `generateRoomGeometry` function with various `RoomContext` objects, including those with missing data, multiple openings, and complex dimensions. Verify that the output mesh dimensions are within the ±2\" tolerance. Use snapshot testing to compare generated geometry structures.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Develop Multi-Room Scene Assembly and Data Integration Hook",
+        "description": "Create the logic to assemble multiple generated room geometries into a cohesive Three.js scene. This involves correctly positioning each room relative to others and integrating the data flow from the main `PropertyContext` into the 3D canvas.",
+        "details": "Implement the `useSceneFromProperty` hook as specified in the 'Data Integration' section. This hook will map over `property.rooms`, call the `generateRoomGeometry` service for each, and then position them in the scene. A simple floor plan layout algorithm is needed (e.g., a grid or row layout initially). The hook should also manage loading states and determine the overall accuracy level of the property visualization. Add basic lighting (AmbientLight, DirectionalLight) to the scene for visibility.",
+        "testStrategy": "Create integration tests for the `useSceneFromProperty` hook. Provide a mock `PropertyContext` with multiple rooms and verify that the resulting `THREE.Scene` contains the correct number of objects, positioned correctly. Test the loading and accuracy state transitions.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Implement Multi-Room Camera Navigation and View Modes",
+        "description": "Develop the camera control system that allows users to navigate between different rooms and switch between Dollhouse, Floor Plan, and Room Focus views with smooth transitions.",
+        "details": "Create the `useCameraNavigation` hook as described in FR-002. Use a library like GSAP or `tween.js` to animate the camera's position and target for smooth transitions. Implement the `calculateCameraPosition` logic for each view mode. For 'Floor Plan', switch to an `OrthographicCamera`. For 'Room Focus', position the camera inside the room's bounding box. For 'Dollhouse', position it isometrically above the entire property. Integrate with React-Three-Fiber's `useThree` hook to get access to the camera and controls.",
+        "testStrategy": "In a test environment, trigger `navigateToRoom` and assert that the camera's final position and target are correct for each view mode. E2E tests using a tool like Playwright or Cypress can verify the visual smoothness of the GSAP animations. Test keyboard and gesture controls manually.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Build HTML Overlay UI for Navigation and View Selection",
+        "description": "Create the user interface components that allow users to select rooms and change viewing modes. This UI will overlay the 3D canvas and interact with the camera navigation system.",
+        "details": "Develop the React components for the `ControlsOverlay` as shown in the component hierarchy. This includes a `RoomNavigator` component (e.g., a dropdown or a list of buttons) and a `ViewModeSelector` (e.g., a button group). These components will call the `navigateToRoom` function from the `useCameraNavigation` hook created in the previous task. Style the UI according to the wireframe in FR-002.",
+        "testStrategy": "Use component testing (e.g., with Storybook or Vitest) to verify the UI renders correctly. Write integration tests to ensure that clicking buttons in the UI correctly triggers the navigation functions and updates the 3D view.",
+        "priority": "high",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Implement Measurement Visualization Layer",
+        "description": "Display dynamic measurement lines and labels for dimensions, heights, and clearances directly on the 3D model. This layer should be toggleable.",
+        "details": "Create the `MeasurementLayer.tsx` component as specified in FR-003. Use `@react-three/drei`'s `Line` and `Html` components for implementation. The `MeasurementLine` sub-component will render a line between two points and an HTML div for the label. Develop the `extractMeasurements` utility to derive `MeasurementDisplay` objects from a `RoomContext`. Implement a UI toggle in the `ControlsOverlay` to control the visibility of this layer.",
+        "testStrategy": "Unit test the `extractMeasurements` utility to ensure it correctly calculates points and values. Component tests for `MeasurementLayer` should verify that lines and labels are rendered based on input props. E2E tests should confirm that the measurements are positioned correctly on the 3D model and that the toggle works.",
+        "priority": "medium",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Develop Schematic Overlay System and Layer Toggles",
+        "description": "Build the framework for displaying trade-specific schematic layers (Electrical, Plumbing, etc.) on the 3D model. This includes rendering symbols and connections and providing a UI for toggling layers.",
+        "details": "Implement the `SchematicOverlay.tsx` component and related data structures from FR-004. For each `SchematicElement`, load or create a corresponding 3D object (e.g., simple geometries or small GLTF models for outlets/switches). Use `THREE.Line` to draw connections between elements. In the `ControlsOverlay`, add the `LayerToggles` component with checkboxes to control the visibility of each schematic layer. Data for these layers will be sourced from `PropertyContext`.",
+        "testStrategy": "Unit test the mapping of `SchematicElement` data to 3D objects. Use Storybook to visually test the rendering of different symbols and layers with mock data. E2E tests should verify that toggling layers in the UI correctly shows/hides the corresponding elements in the 3D scene.",
+        "priority": "medium",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Implement Data Accuracy Indicators",
+        "description": "Create a visual indicator in the UI to clearly communicate the accuracy level of the displayed property data, ranging from 'estimated' to 'verified'.",
+        "details": "Create an `AccuracyIndicator` React component. This component will display an icon, color, and descriptive text based on the `accuracy` state from the `useSceneFromProperty` hook. Use the `ACCURACY_INDICATORS` constant object defined in the PRD for the content. Position this component in a non-intrusive corner of the viewport, as shown in the component hierarchy diagram.",
+        "testStrategy": "Component tests should verify that the `AccuracyIndicator` displays the correct color, icon, and text for each `AccuracyLevel` prop (`estimated`, `scraped`, `document`, `verified`). An integration test should confirm that the indicator updates when the `PropertyContext` data changes.",
+        "priority": "medium",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Implement WebGPU Feature Detection and Renderer Fallback",
+        "description": "Set up the application to detect WebGPU support in the browser and gracefully fall back to WebGL2 or WebGL if it's unavailable. This is a foundational step for future performance enhancements.",
+        "details": "Implement the `detectCapabilities` async function in `utils/renderingCapabilities.ts` as specified in FR-005. This function should check for `navigator.gpu` and attempt to request an adapter. Based on the result, it should return 'webgpu', 'webgl2', or 'webgl'. In the main `DollhouseViewer.tsx` component, call this function on initialization and conditionally configure the R3F `<Canvas>` component. For now, no WebGPU-specific logic is needed, only the detection and setup mechanism. This will ensure the app doesn't break on unsupported browsers.",
+        "testStrategy": "Unit test the `detectCapabilities` function by mocking `navigator.gpu` and `canvas.getContext`. Manually test the application in browsers with and without WebGPU support (e.g., Chrome vs. Safari/Firefox) to ensure it loads correctly and no errors are thrown. Verify that the correct rendering path is chosen.",
+        "priority": "low",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-12-09T08:29:22.106Z",
+      "updated": "2025-12-09T08:30:00.714Z",
+      "description": "Tasks for prd-002 context"
+    }
+  },
+  "prd-003": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Setup Gemini Model Configuration and Service Foundation",
+        "description": "Establish the core Gemini service, including a detailed configuration for all specified models (Flash, Pro, Image, Video). This will serve as the foundation for all subsequent AI interactions.",
+        "details": "In `services/geminiService.ts`, implement the `GEMINI_MODELS` configuration object as specified in the PRD. This object should be strongly typed using the `ModelConfig` interface. Create a basic service class or module that can retrieve model configurations and initialize the Google Generative AI SDK using the API key from environment variables (`import.meta.env.VITE_GEMINI_API_KEY`). Ensure secure handling of the API key, with warnings if it's missing.",
+        "testStrategy": "Unit test the model configuration loader to ensure all models from the PRD are present and correctly typed. Verify that the service initializes the SDK without errors. Add a test to confirm that the API key is read from environment variables and is not hardcoded.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Implement Context-Aware Prompt Injection System",
+        "description": "Develop the system for automatically injecting relevant property, room, and design history context into user prompts, as defined in FR-001. This is critical for generating accurate and personalized AI responses.",
+        "details": "Create a new file `services/contextInjection.ts`. Implement the `buildContextualPrompt` function along with its helper functions (`formatPropertyContext`, `formatRoomContext`, etc.) exactly as outlined in the PRD. The function should take a user prompt, a configuration object, and the application state to assemble a final, context-rich prompt. Implement a utility for `truncateToTokenLimit` to prevent exceeding model input limits.",
+        "testStrategy": "Write unit tests for `buildContextualPrompt` with various mock `AppState` and `ContextInjectionConfig` objects. Verify that different contexts (property, room, history) are correctly formatted and included or excluded based on the config. Test the truncation logic to ensure it correctly shortens oversized context strings.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Develop Streaming Chat Response Handler",
+        "description": "Implement the streaming chat functionality (FR-003) to provide a real-time, responsive user experience for conversational interactions. This involves both backend service logic and frontend UI updates.",
+        "details": "In `services/streamingService.ts`, create the `streamChat` async generator function. This function will use the `buildContextualPrompt` from Task 2 and call the `gemini-2.5-flash` model's `generateContentStream` method. On the frontend, create a React component (`ChatInterface`) that consumes this stream. Use a state variable to append incoming text chunks to the displayed message, providing a progressive update to the user.",
+        "testStrategy": "Frontend: Use a mock streaming service to test the UI's ability to render text chunks as they arrive. Verify that a 'typing' indicator is shown and hidden correctly. Test the cancellation functionality. Backend: Unit test the `streamChat` function to ensure it correctly yields text from the model's stream response and handles empty chunks gracefully.",
+        "priority": "high",
+        "dependencies": [
+          1,
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Build Multi-Model Workflow Orchestration Engine",
+        "description": "Create the workflow engine described in FR-002 to manage complex, multi-step AI tasks that require different models. This engine will orchestrate sequences like 'Context -> Generate -> Validate' for image generation.",
+        "details": "Create `services/workflowEngine.ts` and implement the `WorkflowEngine` class. Define the `Workflow` and `WorkflowStep` interfaces as specified. The `execute` method should iterate through steps, call the appropriate model for each step using the service from Task 1, and pass the output of one step as context to the next. Implement the `imageGenerationWorkflow` as the first concrete example of a workflow.",
+        "testStrategy": "Unit test the `WorkflowEngine` with a mock `callModel` method. Verify that steps are executed in the correct order and that context is passed between them. Test the error handling logic by mocking a failing step and ensuring the `onError` handler is called and respected (retry, skip, abort).",
+        "priority": "medium",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Implement Vision Analysis Pipeline for User Uploads",
+        "description": "Develop the vision analysis service (FR-004) to process user-uploaded images like floor plans and room photos. This service will use `gemini-2.5-pro` to extract structured data and enrich the project context.",
+        "details": "In `services/visionAnalysis.ts`, implement the `analyzeFloorPlan` and `analyzeRoomPhoto` functions. These functions will construct detailed prompts as outlined in the PRD, including the image data (as Base64) and the text prompt. They will then call the `gemini-2.5-pro` model. Implement response parsing logic to convert the model's JSON string output into a structured `AnalysisResult` object.",
+        "testStrategy": "Test with sample images (a clear floor plan, a cluttered room photo). Mock the API call to return a sample JSON string and verify that the parsing logic correctly creates the `AnalysisResult` object. For integration tests, run against the actual API (in a controlled environment) to validate the quality of the prompts and the extracted data.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Create 'Discover Inspiration' Content Generation Service",
+        "description": "Build the inspiration engine from FR-005 to generate personalized style guides, mood boards, and product suggestions. This feature will use multiple Gemini models to create a rich, multi-faceted content package for the user.",
+        "details": "Create `services/inspirationEngine.ts`. Implement the `generateInspiration` function which orchestrates parallel calls to helper functions like `generateStyleGuide` (using `gemini-2.5-flash`) and `generateMoodBoard` (using `gemini-3-pro-image-preview`). The `generateMoodBoard` function will itself make multiple, parallel image generation requests based on derived concepts. Ensure the input `InspirationRequest` is used to tailor all generated content.",
+        "testStrategy": "Unit test each generator function (`generateStyleGuide`, etc.) by verifying the prompt construction logic based on a sample `InspirationRequest`. For `generateInspiration`, mock the helper functions to ensure the `Promise.all` orchestration works correctly. Integration tests should call the actual APIs to validate the quality and coherence of the combined `InspirationResult`.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Implement Centralized Gemini Service Interface and Error Handling",
+        "description": "Refactor and unify all AI calls under a single `GeminiService` interface as defined in the PRD. Implement the custom `GeminiError` class and a centralized error handling mechanism to manage API issues like rate limits and content filtering.",
+        "details": "In `services/geminiService.ts`, define the full `GeminiService` interface. Refactor the functions created in previous tasks (chat, vision, etc.) to be methods of a class that implements this interface. Create `services/geminiErrors.ts` with the `GeminiError` class and `GeminiErrorCode` enum. Wrap all API calls in try/catch blocks that map underlying API errors to the appropriate `GeminiError`, and use a handler system like the one described in `ERROR_HANDLERS` to manage retryable and user-facing errors.",
+        "testStrategy": "Test the error handling by mocking API responses that represent different failure modes (e.g., 429 for rate limit, 400 for invalid input). Verify that the correct `GeminiError` is thrown and that the corresponding handler logic (e.g., retry with delay) is triggered. Ensure all methods in the `GeminiService` correctly implement the interface.",
+        "priority": "medium",
+        "dependencies": [
+          3,
+          4,
+          5,
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Develop Cost Management and Token Tracking System",
+        "description": "Implement a system for tracking token usage and associated costs for all Gemini API calls. Create a UI component to display this information to the user, promoting transparency and helping to manage operational costs.",
+        "details": "Create `services/tokenTracking.ts` with an `UsageTracker` implementation. This service should have a `track` method that gets called after every API request, logging the model, input/output tokens, and calculated cost (using data from Task 1's config). Implement methods for retrieving daily/monthly totals. Create a frontend component `TokenUsageWidget` that consumes this data from a hook (`useTokenUsage`) and displays it as described in the PRD, including a progress bar for the monthly limit.",
+        "testStrategy": "Unit test the `UsageTracker` by calling `track` with various `TokenUsage` payloads and verifying that the daily and monthly cost calculations are correct. On the frontend, test the `TokenUsageWidget` with mock data to ensure correct formatting of token counts and currency, and that the progress bar reflects the usage against the limit.",
+        "priority": "low",
+        "dependencies": [
+          1,
+          7
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-12-09T08:45:30.500Z",
+      "updated": "2025-12-09T08:46:30.157Z",
+      "description": "Tasks for prd-003 context"
+    }
+  },
+  "prd-004": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Refactor Core Image Generation Service",
+        "description": "Update the existing `geminiService.ts` to support a modular and extensible prompt construction pipeline. This will serve as the foundation for integrating detailed perspective, material, and product specifications.",
+        "details": "Modify the `generateRemodel` function in `services/geminiService.ts`. Instead of a single hardcoded prompt string, create a prompt builder pattern. The function should accept a structured context object and assemble the final prompt by calling specialized prompt-building functions (for perspective, materials, etc.). The core model interaction with 'gemini-3-pro-image-preview' will remain, but the prompt assembly will be dynamic. This task also includes setting up the basic types like `ProjectConfig` and `GeneratedImage` if they are not already fully defined.",
+        "testStrategy": "Unit test the prompt builder to ensure it correctly assembles a base prompt. Create a simple end-to-end test that calls the refactored `generateRemodel` function with a basic prompt and verifies that a valid image response is received from the Gemini API. Mock the API call in unit tests.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Implement Perspective-Matched Generation",
+        "description": "Integrate camera and room dimension metadata into the generation prompt to ensure the output image matches the 3D viewport's perspective, as specified in FR-001.",
+        "details": "Create the `services/perspectiveMatching.ts` file. Implement the `ViewportCapture` and `CameraMetadata` interfaces as defined in the PRD. Implement the `buildPerspectivePrompt` and `describePerspective` helper functions. Integrate the `buildPerspectivePrompt` function into the main prompt assembly pipeline in `geminiService.ts`. The `generateRemodel` function will now need to accept a `ViewportCapture` object.",
+        "testStrategy": "Unit test `describePerspective` with various camera positions and angles to verify correct description output ('elevated dollhouse', 'standing eye-level', etc.). Unit test `buildPerspectivePrompt` to ensure it formats the camera and dimension data correctly. For integration testing, generate images with specific camera data and visually inspect if the output perspective, proportions, and lighting direction match the input, aiming for less than 5° tolerance.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Implement Style-Aware Material Rendering",
+        "description": "Develop the system for applying materials and finishes that align with the user's selected design style and budget tier, as per FR-002.",
+        "details": "Create the `config/styleMaterials.ts` file and populate it with the `StyleMaterialPalette` structure for 'modern' and 'farmhouse' styles as specified. Implement the `getMaterialsForBudget` utility function. Create the `buildMaterialPrompt` function to dynamically generate the material, color, and texture specifications based on the project's style and budget. Integrate this function into the main prompt assembly pipeline in `geminiService.ts`.",
+        "testStrategy": "Unit test `getMaterialsForBudget` to ensure it correctly filters materials for different styles and budget tiers. Test `buildMaterialPrompt` to verify it constructs the correct prompt section. For validation, generate images for 'modern' and 'farmhouse' styles at different budget tiers ('standard', 'premium', 'luxury') and visually confirm that the rendered materials (flooring, countertops, etc.) and color palettes match the specifications.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Develop Backend Generation Queue and History Service",
+        "description": "Implement a robust system for managing concurrent image generation requests and for storing a version history of all generated images for each project, as detailed in FR-006.",
+        "details": "Create `services/generationQueue.ts` and implement the `GenerationQueue` class. It should handle job enqueuing, processing with a concurrency limit (e.g., `maxConcurrent = 2`), and automatic retries for failed jobs (up to 3 retries). Implement event emitters for job status changes. Create `store/generationHistory.ts` to define the `GenerationVersion` interface and the `GenerationHistoryStore`. This store should provide methods to add, retrieve, delete, and rate versions. Use a persistent database (e.g., PostgreSQL, Firestore) for the history store.",
+        "testStrategy": "Unit test the `GenerationQueue` class: enqueue multiple jobs and verify they are processed according to the concurrency limit. Test the retry logic by mocking a failing generation task. Test the `GenerationHistoryStore` by adding, retrieving, and deleting versions, ensuring data integrity. End-to-end test by submitting several generation requests via an API endpoint and verifying they are processed correctly and the results are saved to the history.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Integrate Product Reference Rendering",
+        "description": "Enable the generation pipeline to accurately render specific user-selected products by incorporating product details and reference images into the prompt, as per FR-003.",
+        "details": "Create `services/productReference.ts`. Implement the `ProductReference` and `ProductPlacement` interfaces. Develop the `renderWithProducts` function which constructs a detailed prompt section with product names, dimensions, materials, and positions. This function should also handle the inclusion of up to 3 product reference images in the `generateContent` call. This will require modifying the core generation service to accept an array of `ProductPlacement` objects.",
+        "testStrategy": "Unit test the prompt construction within `renderWithProducts` to ensure product details are formatted correctly. For validation, provide a generation request with a well-known product (e.g., an Eames Lounge Chair) with reference images. Verify that the generated image contains a recognizable representation of the product, respecting its scale and placement within a ±10% tolerance.",
+        "priority": "medium",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Build Before/After Comparison UI and Annotation Service",
+        "description": "Create the frontend component for a before/after image comparison with a slider, and develop the backend service to auto-generate annotations highlighting the changes, as specified in FR-004.",
+        "details": "In the frontend, create the `components/ResultOverlay.tsx` React component as outlined in the PRD. Implement the slider functionality for comparing 'before' and 'after' images, ensuring it is responsive and supports touch events. On the backend, create a new service function `generateComparisonAnnotations` that takes two base64 images, sends a request to a vision model (like Gemini) with the specified prompt to identify changes, and parses the JSON response into an array of `ComparisonAnnotation` objects.",
+        "testStrategy": "Frontend: Test the `ResultOverlay` component in a storybook or similar environment to verify slider functionality and correct rendering of annotations. Backend: Unit test the `generateComparisonAnnotations` function by providing sample before/after images and mocking the AI response to ensure correct parsing. End-to-end: Generate a design, then trigger the annotation process and display the result in the UI, verifying that annotations are positioned accurately over the identified changes.",
+        "priority": "medium",
+        "dependencies": [
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Implement Schematic Overlay Generation",
+        "description": "Create a service to generate various types of professional schematic overlays (e.g., electrical, plumbing, demolition) on top of a base image or from scratch, as per FR-005.",
+        "details": "Create the `services/schematicGenerator.ts` file. Define the `SchematicType` and `SchematicRequest` types. Implement the `generateSchematicOverlay` function which acts as a controller. Implement the `buildSchematicPrompt` function, which contains a switch or record mapping `SchematicType` to detailed prompt instructions. This prompt should incorporate room specs and annotations. The service should be able to generate both 'technical' and 'presentation' styles.",
+        "testStrategy": "For each `SchematicType`, create a unit test for `buildSchematicPrompt` to ensure it generates the correct, detailed prompt. For validation, generate one of each schematic type (e.g., an 'electrical-plan' and a 'dimension-callouts' overlay). Manually review the output for correctness of symbols (e.g., ANSI/IEEE for electrical), accuracy of dimensions, and overall professional quality. Verify that the output can be exported as a PDF.",
+        "priority": "medium",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Implement Performance Optimizations",
+        "description": "Introduce a caching layer to reduce redundant generation requests and implement progressive image loading on the frontend to improve the user experience.",
+        "details": "Backend: Create `services/generationCache.ts` and implement the `GenerationCache` class. It should use a Map for in-memory caching with an LRU eviction policy based on `maxSize`. Implement the `generateKey` function using a hash of the normalized prompt and key context fields. Integrate this cache into the `GenerationQueue` service to check for a cached result before processing a new job. Frontend: Refactor the image display component into `components/GeneratedImageView.tsx`. Implement the progressive loading logic using `useState` and `useEffect` to manage loading states ('loading', 'preview', 'full'), first showing a low-resolution blurred preview, then swapping in the full-resolution image once loaded.",
+        "testStrategy": "Backend: Test the `GenerationCache`. Verify that submitting the same request twice results in a cache hit on the second attempt. Test the eviction policy by adding items until the cache size limit is exceeded. Frontend: Test the `GeneratedImageView` component by simulating network latency for preview and full image loads. Verify that the skeleton, blurred preview, and full image appear in the correct sequence. Measure the cache hit rate metric after deployment, aiming for >20%.",
+        "priority": "medium",
+        "dependencies": [
+          4,
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-12-09T16:11:42.817Z",
+      "updated": "2025-12-09T16:12:34.831Z",
+      "description": "Tasks for prd-004 context"
+    }
+  },
+  "prd-005": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Project Setup & Core Service Scaffolding",
+        "description": "Initialize the project structure, install dependencies, set up environment variables, and create placeholder files for the main services required for the Source Document Processing feature.",
+        "details": "Create a new project directory. Initialize a TypeScript project with `npm init`. Install necessary dependencies such as `@mendable/firecrawl-js`, `express`, `multer`, and Google AI client libraries. Create a `.env` file for `FIRECRAWL_API_KEY` and Gemini API keys. Scaffold the service files: `services/firecrawlService.ts`, `services/documentProcessor.ts`, `services/ocrService.ts`, `services/dataMerger.ts`, and `services/extractionAgents.ts`. Define initial data structures like `PropertyContext` and `DocumentProcessingResult` in a `types/` directory.",
+        "testStrategy": "Verify that the project compiles successfully using `tsc`. Write a basic test to ensure environment variables are loaded correctly into the application config. Create simple unit tests for each service file to check if they can be imported and instantiated without errors.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Implement Firecrawl Web Scraping for Property Data",
+        "description": "Integrate the Firecrawl API to scrape property data from specified sources like Zillow, Redfin, and county assessor websites based on a property address.",
+        "details": "In `services/firecrawlService.ts`, implement the `scrapePropertyData` function using `@mendable/firecrawl-js`. Define the extraction schemas for Zillow, Redfin, and county sources as specified in the PRD. Use `Promise.allSettled` to query multiple sources in parallel for efficiency. Implement helper functions like `buildZillowUrl(address)` to construct the target URLs. The function should handle both successful responses and errors gracefully, returning a `ScrapingResult[]` array.",
+        "testStrategy": "Unit test the URL-building helper functions. Write integration tests that call the `scrapePropertyData` function with a mock Firecrawl client to verify data normalization. Conduct a live E2E test with a valid address and API key to ensure data is correctly scraped and structured from at least one source.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Create Document Upload Endpoint and AI-Powered Type Detection",
+        "description": "Develop a backend API endpoint to handle file uploads and implement the logic to classify the uploaded document's type using file extension and Gemini AI.",
+        "details": "Create a POST endpoint, e.g., `/api/documents/upload`, using a framework like Express. Use a middleware like `multer` to handle `multipart/form-data` file uploads. Implement the `detectDocumentType` function as described in the PRD. First, check the file extension for quick classification (e.g., 'dwg', 'dxf'). For PDFs and images, convert the file buffer to a base64 string and send it to the Gemini Vision API with the classification prompt provided in the PRD.",
+        "testStrategy": "Unit test the `detectDocumentType` function with mock files and mocked Gemini API responses to ensure correct classification. Write an integration test for the `/api/documents/upload` endpoint, sending various file types (PDF, PNG, JPG) and asserting that the API returns the correct `DocumentType` in its response.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Build OCR Service using Gemini Vision",
+        "description": "Create a dedicated OCR service that uses the Gemini Vision API to extract structured text, layout information, and tables from document images.",
+        "details": "In `services/ocrService.ts`, implement the `performOCR` function that accepts a base64 encoded image string. This function will call the Gemini Vision API using the detailed prompt from `FR-003`, which specifically requests a structured JSON output containing text blocks, bounding boxes, and tables. Implement a `parseOCRResponse` helper function to safely parse the JSON string returned by the AI and map it to the `OCRResult` TypeScript interface, handling potential parsing errors.",
+        "testStrategy": "Create a test suite with a set of sample document images (e.g., a scanned invoice with a table, a blueprint with labels). For each image, run `performOCR` and validate the output structure. Manually verify the accuracy of the extracted text and the correctness of the table structure for at least one complex example.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Implement the Core Document Processing Pipeline",
+        "description": "Orchestrate the document processing flow from file upload to final data extraction, connecting the type detection, preprocessing, and AI extraction stages.",
+        "details": "In `services/documentProcessor.ts`, implement the main `processDocument` function. This function will act as a controller, orchestrating the pipeline: 1. Call `detectDocumentType` (from Task 3). 2. Implement a `preprocessDocument` step, which for PDFs might involve using a library like `pdf-js` to convert pages to images for OCR. 3. Call the appropriate extraction agent based on the document type. This task focuses on setting up this control flow and ensuring data is passed correctly between stages.",
+        "testStrategy": "Write an integration test for the `processDocument` function. Provide a sample file (e.g., a multi-page PDF floor plan). Mock the extraction agent's response. Verify that the pipeline executes in the correct order: type detection, preprocessing (confirming multiple images are generated from the PDF), and the extraction agent is called with the processed data.",
+        "priority": "high",
+        "dependencies": [
+          3,
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Implement AI Agents for Floor Plan and Photo Analysis",
+        "description": "Develop the specialized AI extraction agents for 'floor-plan', 'room-photo', and 'inspection-report' document types using Gemini AI with detailed, context-aware prompts.",
+        "details": "In `services/extractionAgents.ts`, implement the `extract` methods for the agents specified in the PRD. For each agent ('floor-plan', 'room-photo', 'inspection-report'), carefully craft the prompt provided in the PRD, ensuring it asks for structured JSON output. The implementation should dynamically insert existing `PropertyContext` into the prompt to allow the AI to validate against known data. The function will then call the Gemini API and parse the response into the target data structure.",
+        "testStrategy": "For each agent, create a dedicated test file. Use a sample input document (e.g., a clear floor plan image, a kitchen photo). Call the agent's `extract` function and validate that the returned JSON is well-formed and contains the expected data points. For the floor plan, check if room names and dimensions are extracted. For the photo, check if room type and features are identified.",
+        "priority": "high",
+        "dependencies": [
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Build Data Merging and Conflict Resolution Service",
+        "description": "Create the backend logic to merge property data from multiple sources (web scraping, document analysis) and identify conflicts based on a predefined source priority hierarchy.",
+        "details": "In `services/dataMerger.ts`, implement the `mergePropertyData` function. This function will take an existing `PropertyContext` and an array of new data fragments. Use the `sourcePriority` map (`user-verified`: 100, `uploaded-document`: 80, etc.) to resolve conflicts automatically. If a new value has a higher priority, it overwrites the old one. If priorities are equal, a `DataConflict` object is created and added to a `conflicts` array. Track the source of each piece of data in an `attributions` array.",
+        "testStrategy": "Unit test the `mergePropertyData` function extensively. Test the following scenarios: merging into an empty context, adding non-conflicting data, overwriting lower-priority data (e.g., web-scraped data being overwritten by AI-extracted data), ignoring lower-priority data, and generating a conflict for equal-priority data.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Develop Frontend UI for Document Upload and Status Tracking",
+        "description": "Create the user-facing 'Document Center' panel for uploading files and URLs, and for viewing the real-time processing status of each submitted source.",
+        "details": "Using a frontend framework like React, build the UI component as depicted in the PRD's mockup. Implement a file dropzone using a library like `react-dropzone`. On file upload or URL submission, call the respective backend APIs (from Task 2 and 3). Manage a list of upload/processing jobs in the component's state. Each item should have a status ('Processing...', 'Needs Review', 'Processed') which is updated based on API responses, potentially using polling or WebSockets for real-time updates.",
+        "testStrategy": "Use a component testing library like Storybook or Jest/React Testing Library to test the UI component in isolation. Verify that drag-and-drop and file selection work. Conduct an end-to-end test where you upload a file through the UI, mock the backend API responses, and verify that the status display updates correctly from 'Processing...' to 'Processed' or 'Needs Review'.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-12-09T17:00:19.015Z",
+      "updated": "2025-12-09T17:02:30.420Z",
+      "description": "Tasks for prd-005 context"
+    }
+  },
+  "prd-008": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Define Foundational & Supporting TypeScript Types",
+        "description": "Create the basic, reusable TypeScript types and interfaces that are shared across the major data schemas. This includes enums, simple type aliases, and small interfaces like AreaMeasurement and SunPathData.",
+        "details": "Create a new file, `types/shared.ts`. In this file, define all the supporting types specified in the PRD. This includes: `Orientation`, `ClimateZone`, `PropertyType`, `DataQualityLevel`, `AreaMeasurement`, `SunPathData`, `RoomType`, `MeasurementSource`, `FeatureType`, `ProjectStatus`, `ProjectPhase`, `DesignStyle`, `BudgetTier`, `WorkType`, `DocumentType`, and others. This task ensures that all subsequent schema definitions can import from a single source of truth for these foundational types.",
+        "testStrategy": "Use a TypeScript linter (like ESLint) to ensure code quality. Verify that all types defined in the PRD's 'SUPPORTING TYPES' sections are present and correctly typed. No runtime tests are needed, as this is purely type definitions. The success metric is successful compilation when these types are imported by other files.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Implement `MeasurementSet` Schema and Related Types",
+        "description": "Develop the detailed TypeScript interfaces for room measurements as defined in `types/measurements.ts`. This schema is critical for 3D generation and requires high precision.",
+        "details": "Create the file `types/measurements.ts`. Implement the following interfaces: `Measurement`, `MeasurementSet`, `WallMeasurement`, `OpeningMeasurement`, `FeatureMeasurement`, and `ClearanceMeasurement`. Import necessary foundational types like `Orientation` and `MeasurementSource` from `types/shared.ts`. Pay close attention to the structure, ensuring properties like `position`, `dimensions`, and `clearances` are accurately typed.",
+        "testStrategy": "Create unit tests for any helper functions associated with these types (e.g., functions to calculate `display` string for `Measurement`). Write mock objects conforming to these interfaces to ensure they can be instantiated correctly. Validate that the structure matches the PRD exactly. This task depends on the successful compilation of the types defined in Task 1.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Implement `RoomContext` Schema",
+        "description": "Define the complete TypeScript interface for a single room, `RoomContext`, which will be used for 3D geometry generation and AI understanding.",
+        "details": "Create the file `types/room.ts`. Define the `RoomContext` interface. This interface will import and use `MeasurementSet` from `types/measurements.ts` and various enums/types like `RoomType` from `types/shared.ts`. Structure the interface into the logical blocks specified in the PRD: IDENTITY, MEASUREMENTS, CURRENT STATE, FEATURES, CONNECTIONS, CONSTRAINTS, and REMODEL SCOPE.",
+        "testStrategy": "Write mock `RoomContext` objects for various room types (e.g., kitchen, primary-bedroom) to ensure the interface is flexible and complete. Validate that all nested structures are correctly typed and that all dependencies from Task 1 and Task 2 are correctly imported and used. Successful compilation is the primary success metric.",
+        "priority": "high",
+        "dependencies": [
+          1,
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Implement `ProjectConfig` and `DesignVersion` Schemas",
+        "description": "Define the TypeScript interfaces for `ProjectConfig` (user preferences and project settings) and `DesignVersion` (design history and iterations).",
+        "details": "Create two new files: `types/project.ts` and `types/design.ts`. In `types/project.ts`, implement the `ProjectConfig` interface and its supporting types like `ContactInfo` and `TeamMember`. In `types/design.ts`, implement the `DesignVersion` interface and its supporting types like `MaterialSpec` and `ProductReference`. Both files will import foundational types from `types/shared.ts`.",
+        "testStrategy": "For each interface, create mock data representing different project states (e.g., 'planning' vs 'completed') and design versions (e.g., an AI-generated option vs. a user-favorited one). Ensure all fields, especially optional ones, are correctly typed. Validate against the PRD definitions.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Implement `SourceDocument` Schema",
+        "description": "Define the `SourceDocument` interface for tracking uploaded documents, their classification, processing status, and extracted data.",
+        "details": "Create the file `types/source.ts`. Implement the `SourceDocument` interface along with its supporting types, `DocumentType` and `ExtractionAnnotation`. This schema is crucial for the data ingestion pipeline and needs to accurately reflect the state of a document as it moves through processing and extraction.",
+        "testStrategy": "Create mock `SourceDocument` objects to represent different stages of the processing pipeline: 'pending', 'processing', 'completed', and 'failed'. Ensure the `extraction.structuredData` field correctly uses `Partial<PropertyContext>` for type safety. Validate that all fields match the PRD.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Implement `PropertyContext` Master Schema",
+        "description": "Assemble the master `PropertyContext` schema, which serves as the single source of truth for a property. This schema integrates many of the other data structures.",
+        "details": "Create the file `types/property.ts`. Define the `PropertyContext` interface. This will be a large interface composed of types defined in previous tasks. Import `RoomContext` from `types/room.ts`, `SourceDocument` from `types/source.ts`, and numerous supporting types from `types/shared.ts`. Structure the interface into the main sections outlined in the PRD: IDENTITY, ADDRESS, GEOSPATIAL, DETAILS, etc.",
+        "testStrategy": "This is a key integration task. The primary test is to create a comprehensive mock `PropertyContext` object that includes at least one `RoomContext` and one `SourceDocument`. The test passes if the entire structure compiles without TypeScript errors, confirming that all dependencies are correctly integrated.",
+        "priority": "high",
+        "dependencies": [
+          1,
+          3,
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Implement Zod Validation Schemas for All Data Structures",
+        "description": "Create Zod schemas for all major data interfaces to ensure 100% validation coverage for all inputs, as required by the success metrics.",
+        "details": "Create the file `validation/schemas.ts`. Using the `zod` library, implement validation schemas for `Measurement`, `MeasurementSet`, `RoomContext`, `PropertyContext`, `ProjectConfig`, `DesignVersion`, and `SourceDocument`. Build schemas from the bottom up, starting with smaller types and composing them into larger ones. For example, create `MeasurementSchema` first, then use it within `MeasurementSetSchema`. Implement the `validatePropertyContext` helper function.",
+        "testStrategy": "Write unit tests for each Zod schema. For each schema, test two scenarios: 1) Parsing valid data, asserting that it passes. 2) Parsing invalid data (e.g., wrong data type, missing required field, number out of range), asserting that it throws a `ZodError`. This will ensure the validation logic is robust and covers all constraints.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Set Up Zustand Store with IndexedDB Persistence",
+        "description": "Implement the local state management solution using Zustand, configured with persistence middleware to save and retrieve application state from IndexedDB.",
+        "details": "Create a new file, `store/index.ts`. Define the main application state interface, `AppState`, which will contain slices for `projects`, `properties`, `designHistory`, etc., using the TypeScript interfaces created in previous tasks. Set up the Zustand store using `create`. Integrate the `persist` middleware from `zustand/middleware`. Configure the `persist` middleware as specified in the PRD, including the `name`, `version`, `partialize` function, and a placeholder `migrate` function.",
+        "testStrategy": "Write integration tests using a testing library like Vitest or Jest with JSDOM. The tests should: 1) Create the store. 2) Dispatch an action to update the state (e.g., add a new property). 3) Verify that the in-memory state is updated. 4) Verify that the `setItem` method of a mocked IndexedDB/localStorage is called with the correct serialized state. 5) Test rehydration by initializing a new store and ensuring it loads the previously saved state.",
+        "priority": "high",
+        "dependencies": [
+          7
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-12-09T17:02:50.067Z",
+      "updated": "2025-12-09T17:03:31.951Z",
+      "description": "Tasks for prd-008 context"
+    }
+  },
+  "prd-010": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Tier 1 API: Implement Property Context Foundation",
+        "description": "Create the foundational Property Context API for ingesting and retrieving structured property intelligence. This includes setting up the server, database, and core endpoints for creating, retrieving, and updating property data.",
+        "details": "Use a Node.js framework like Express or Fastify with TypeScript. Define a database schema (e.g., PostgreSQL with PostGIS for spatial data) to store `PropertyContext`. Implement the following REST endpoints:\n- `POST /api/v1/properties`: Accepts address, documents, or a `listing_url`. For `listing_url`, integrate a scraping service like Firecrawl. The handler will orchestrate data extraction, normalization, and storage, returning a `PropertyContextResponse`.\n- `GET /api/v1/properties/:id`: Retrieves the full `PropertyContext` object by its unique ID.\n- `PATCH /api/v1/properties/:id`: Allows for partial updates to a property's context.\n- `POST /api/v1/properties/:id/scrape`: A dedicated endpoint to trigger a refresh scrape via Firecrawl.\n- Implement sub-resource endpoints like `GET /api/v1/properties/:id/spaces`.",
+        "testStrategy": "Unit tests for data normalization logic. Integration tests for each endpoint using a mock database and a mock scraping service. Test cases should cover all creation methods (address, docs, URL) and validate the structure of the `PropertyContextResponse`. Test error handling for invalid addresses or failed scrapes.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Tier 3 API: Implement Visualization Endpoint",
+        "description": "Develop the direct-access visualization API that interfaces with the 'Nano Banana Pro' rendering engine. This service will generate images based on property data and specific rendering parameters.",
+        "details": "Create the `POST /api/v1/visualize` endpoint. This endpoint will receive a `VisualizeRequest` containing `property_id`, `space_id`, camera details, and style specs. The backend service will fetch the relevant `SpaceContext` using the `property_id` and `space_id` (dependency on Task 1). It will then translate this data into a prompt or scene description for the 'Nano Banana Pro' rendering engine. The response should include the `image_url` (after uploading the generated image to a cloud storage like S3) and generation metadata. Implement support for different output formats and resolutions as specified.",
+        "testStrategy": "Mock the 'Nano Banana Pro' engine to test the API's request handling and response formatting. Integration tests should validate that a valid request produces a correctly formatted response with a plausible `image_url`. Test payload validation for required fields like `property_id`, `resolution`, etc. Verify image upload to cloud storage.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Tier 2 API: Implement Design Intelligence Generation",
+        "description": "Build the core AI-powered Design Intelligence API to generate comprehensive design proposals, including visualizations, reasoning, cost estimates, and material specifications.",
+        "details": "Implement the `POST /api/v1/designs/generate` endpoint. This service will be a complex orchestrator. It will:\n1. Fetch `PropertyContext` using the `property_id` from Task 1.\n2. Use an AI model (e.g., Gemini or Claude) to process `design_goals`, `style_preferences`, and property data to generate the `DesignReasoning` object.\n3. Call the Visualization API (Task 2) to create the `Visualization[]` array.\n4. Query internal cost models (to be developed in a later task, but stubbed out for now) to produce the `CostBreakdown`.\n5. Structure all generated data into the `GenerateDesignResponse` and store it in a 'designs' database table, linked to the property.",
+        "testStrategy": "Unit test the orchestration logic with mocked dependencies (Property API, Visualization API, AI model). Create snapshot tests for the generated `DesignReasoning` to ensure consistent structure. Integration tests will call the endpoint with a valid `property_id` and validate the response schema. Test various combinations of `budget_tier` and `design_goals`.",
+        "priority": "high",
+        "dependencies": [
+          1,
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Develop JavaScript/TypeScript SDK",
+        "description": "Create and publish the official `@remodelvision/sdk` NPM package for developers to easily interact with the RemodelVision API from JavaScript and TypeScript applications.",
+        "details": "Initialize a new TypeScript project. Use a modern HTTP client like `axios` or `fetch`. Structure the SDK with classes and methods mirroring the API structure, e.g., `rv.properties.analyze()`, `rv.designs.generate()`. Implement the methods defined in the PRD. For long-running operations like `designs.generateStream`, use Server-Sent Events (SSE) or WebSockets to stream progress updates from the backend. Add JSDoc comments for all methods and types for excellent autocompletion. Set up a build process using `tsc` or `tsup` and configure publishing to NPM.",
+        "testStrategy": "Write unit tests for each SDK method, mocking the HTTP client to ensure correct API requests are constructed. Create an example project that uses the SDK to perform end-to-end tests against a staging environment of the API. Test the streaming implementation to ensure updates are received correctly.",
+        "priority": "high",
+        "dependencies": [
+          1,
+          2,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Tier 4 API: Implement ROI Analysis Endpoint",
+        "description": "Build the Analysis API, starting with the ROI projection endpoint. This service will take proposed changes for a property and return a detailed financial analysis.",
+        "details": "Implement the `POST /api/v1/analyze/roi` endpoint. The handler will receive a `property_id` and a list of `proposed_changes`. It will fetch the base `PropertyContext` (Task 1). For each change, it will query internal or third-party data sources for localized cost data (from the 'Contractor Network Effects' and 'Localized ROI Models'). It will then use a predictive model to estimate the value add. The response will be structured as `ROIAnalysisResponse`, including cost ranges, projected value, and comparable renovations. This task involves significant data modeling and potential ML model development.",
+        "testStrategy": "Unit test the cost and ROI calculation logic with predefined data sets. Integration tests will call the endpoint with various `ROIAnalysisRequest` payloads and validate the response schema. Test against edge cases like unusual property types or locations with sparse data. A golden dataset should be used to check for regressions in the prediction model.",
+        "priority": "medium",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Implement MCP Server and Core Tools",
+        "description": "Set up and configure the Model Context Protocol (MCP) server to expose RemodelVision capabilities as tools for AI agents like Claude and GPT.",
+        "details": "Create a new service (`packages/mcp-server`) using the `@modelcontextprotocol/sdk/server/mcp.js` library as specified in the PRD. Instantiate the `RemodelVisionClient` (the JS SDK from Task 4) to interact with the API. Register the tools defined in the PRD, starting with `remodelvision_analyze_property` and `remodelvision_generate_design`. The implementation for each tool will call the corresponding SDK method and format the result into the MCP-specified `content` array. Deploy this server as a separate, publicly accessible service.",
+        "testStrategy": "For each registered tool, write an integration test that simulates an MCP request with a valid `inputSchema` and asserts that the tool calls the correct underlying SDK method and returns a correctly formatted MCP response. Test input validation by sending invalid payloads. Perform end-to-end testing with an actual AI agent (e.g., in a test harness) to ensure the tool definitions and responses are interpreted correctly.",
+        "priority": "medium",
+        "dependencies": [
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Develop Python SDK",
+        "description": "Create and publish the official `remodelvision` PyPI package, providing a Pythonic interface to the API, including support for async operations and streaming.",
+        "details": "Initialize a new Python project using a modern structure (e.g., with Poetry or Hatch). Use `httpx` for both sync and async HTTP requests and `pydantic` for data modeling to represent API request/response objects. Mirror the structure of the JS SDK: `rv.properties.analyze()`, `rv.designs.generate()`. Implement the async context manager and streaming pattern shown in the PRD for the `designs.generate` method. Package the SDK for distribution on PyPI.",
+        "testStrategy": "Use `pytest` to write unit tests for each SDK method, mocking `httpx` calls. Write integration tests that run against a staging API environment to validate real-world behavior. Specifically test the async and streaming functionality to ensure it works as expected with `asyncio`.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          2,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Implement API Authentication, Pricing, and Rate Limiting",
+        "description": "Integrate a robust authentication, billing, and rate-limiting system to manage API access according to the defined pricing tiers (Free, Pro, Business, Enterprise).",
+        "details": "Implement API key authentication. Create database tables to store user accounts, API keys, subscription tiers, and usage quotas. Use an API Gateway (like AWS API Gateway, Kong) or application-level middleware to perform the following on every request:\n1. Validate the API key.\n2. Check which tier the key belongs to.\n3. Enforce the tier's rate limit (e.g., using a Redis-based token bucket algorithm).\n4. Log the API call against the user's monthly quota.\n5. Reject requests that are unauthenticated, over the rate limit, or over quota. Integrate with a payment provider like Stripe to manage subscriptions.",
+        "testStrategy": "Unit test the middleware logic for authentication, rate limiting, and quota checks. Integration tests should be created for each pricing tier: send requests with a 'Free' key to verify its lower rate limit, a 'Pro' key for its higher limit, and test the over-quota blocking mechanism. Test the API key generation and validation flow.",
+        "priority": "high",
+        "dependencies": [
+          1,
+          2,
+          3,
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-12-09T17:03:45.416Z",
+      "updated": "2025-12-09T17:04:32.141Z",
+      "description": "Tasks for prd-010 context"
+    }
+  },
+  "persona-homeowner": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Backend: Photo-to-3D Kitchen Model Conversion Pipeline",
+        "description": "Develop the core backend service that accepts user-uploaded kitchen photos and processes them to generate a basic 3D model with dimensional data. This is the primary P0 feature to provide immediate user value.",
+        "details": "Create a Python-based microservice using FastAPI. The pipeline will involve several steps: 1. Image Upload Endpoint: Secure endpoint to receive multiple images. 2. Image Preprocessing: Use OpenCV to normalize images (lighting, orientation). 3. Photogrammetry/SLAM: Use a library like OpenMVG or a cloud service (e.g., Azure Object Anchors) to reconstruct the room's geometry and create a point cloud. 4. Object Recognition: Use a pre-trained model (like YOLOv5) to identify key objects like windows, doors, and existing cabinets. 5. Model Generation: Convert the processed data into a standardized 3D format (e.g., glTF) with metadata for dimensions and object locations. The service should return a job ID for polling and the final model URL upon completion.",
+        "testStrategy": "Unit tests for image processing functions. Integration tests to upload a sample set of kitchen photos and verify that a valid, non-empty glTF file is generated. Manually verify the dimensional accuracy of 5 different test kitchens against their real measurements, aiming for <5% error margin. Test failure modes like blurry images or poor lighting.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Frontend: 3D Kitchen Viewer and Model Loading",
+        "description": "Set up the frontend application and integrate a 3D rendering library to load and display the kitchen model generated by the backend. This task enables users to see and interact with their space.",
+        "details": "Initialize a React application using Vite. Integrate Three.js or React Three Fiber for 3D rendering. Create a main viewer component that fetches the 3D model from the backend service (using the job ID from Task 1). Implement basic camera controls (orbit, pan, zoom) to allow users to navigate their kitchen space. Add a loading state indicator while the model is being fetched and parsed. The component should be able to load a .glTF file and render it within a canvas element.",
+        "testStrategy": "Component tests for the 3D viewer to ensure it renders correctly with a sample glTF model. End-to-end test to simulate the full flow: user uploads photos, polls for completion, and sees the 3D model appear in the viewer. Test performance on different devices to ensure smooth camera controls. Verify that loading states are displayed correctly.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Implement AI-Powered Inspiration and Style Quiz",
+        "description": "Create the 'Discover Inspiration' feature, which includes a user style quiz and a backend service to generate personalized design ideas based on the user's kitchen dimensions and style preferences.",
+        "details": "Frontend: Build a multi-step modal component for the style quiz (e.g., style choice, budget range). Backend: Create a new endpoint `/inspiration`. Based on quiz inputs (e.g., 'Farmhouse', '$15k-25k') and the user's kitchen dimensions, the service will query a pre-populated database of design templates. Each template will contain material IDs, layout suggestions, and estimated costs. For an advanced implementation, this could trigger a generative AI model (e.g., Stable Diffusion with ControlNet) to create concept images. The results will be displayed in a gallery format as shown in the PRD.",
+        "testStrategy": "Frontend: Test the quiz UI for state management and submission. Backend: Unit test the inspiration-matching logic to ensure correct templates are returned for various inputs. Integration test to verify that selecting a style in the quiz populates the inspiration gallery with relevant, correctly formatted design ideas. Manually review 20 generated inspirations for relevance and quality.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Develop Real-time Material and Color Customization",
+        "description": "Enable users to interactively change materials and colors of kitchen components (cabinets, countertops, floors) within the 3D viewer and see the changes instantly.",
+        "details": "Frontend: In the Three.js viewer, implement raycasting to detect which part of the model the user clicks on (e.g., a cabinet mesh). Create a UI panel ('Material Picker') that displays material options (e.g., textures for wood, granite, paint colors). When a user selects a material, dynamically update the texture/material property of the corresponding mesh in the 3D scene. Backend: Create a database schema for materials, including name, image URL, type (cabinet, floor, etc.), and cost per unit (e.g., sq ft). Create an API endpoint to fetch available materials.",
+        "testStrategy": "Unit test the raycasting logic to ensure it correctly identifies different kitchen components. E2E test: click on countertops, select a 'marble' texture from the UI, and verify the 3D model updates instantly. Test with at least 10 different materials on all customizable surfaces. Verify the 'Before/After' slider functionality by saving the initial state and comparing it to the modified state.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Implement Real-time Budget Tracker",
+        "description": "Create a system to track the estimated cost of the kitchen remodel in real-time as the user makes design choices. The budget should update whenever a material or product is changed.",
+        "details": "Backend: Extend the material and product database schema from Task 4 to include detailed pricing information. Create an endpoint that can calculate the total project cost based on a list of selected materials and the surface areas derived from the 3D model. Frontend: Create a UI component to display the running total cost. This component will listen for events triggered by the material picker (Task 4). When a material is changed, it will call the backend calculation endpoint with the new design configuration and update the displayed cost. Implement a warning UI element if the cost exceeds the user's pre-set budget.",
+        "testStrategy": "Backend: Unit test the cost calculation logic with various combinations of materials and dimensions. Frontend: Test the UI component to ensure it updates correctly upon material change events. E2E test: Start a new design, set a budget of $20,000, select materials that cost $22,000, and verify that the total updates correctly and a budget alert is displayed.",
+        "priority": "high",
+        "dependencies": [
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Develop Contractor Export to PDF Feature",
+        "description": "Build the functionality to generate and export a professional PDF design package containing 3D renderings, measurements, and a list of selected materials. This is a key P1 feature and a potential monetization point.",
+        "details": "Backend: Create a new endpoint `/export/pdf`. This service will take a design configuration ID as input. It will use a headless browser library like Puppeteer or a dedicated PDF library like WeasyPrint to render an HTML template populated with the design data. The template should include: multiple screenshots of the 3D model from different angles (captured server-side or passed from the client), a 2D layout with dimensions, and a specification sheet listing all selected materials, products, and SKUs. Frontend: Create a UI to trigger the export, handle the payment flow (if applicable, e.g., via Stripe), and allow the user to download the generated PDF.",
+        "testStrategy": "Backend: Integration test to call the export endpoint and verify a well-formatted, multi-page PDF is generated. The PDF content must be checked against the input design data for accuracy. Test edge cases like designs with custom items or missing information. Frontend: Test the 'Generate Package' button, including the loading state and the final download prompt. Manually review the downloaded PDF for readability and professional appearance.",
+        "priority": "medium",
+        "dependencies": [
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-12-09T17:04:52.756Z",
+      "updated": "2025-12-09T17:05:30.928Z",
+      "description": "Tasks for persona-homeowner context"
+    }
+  },
+  "persona-investor": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Backend Setup for Multi-Project Portfolio Management",
+        "description": "Create the foundational backend services and database schema to support multiple users, each managing a portfolio of distinct real estate projects. This is the core data structure upon which all other features will be built.",
+        "details": "Use a Node.js (Express/Fastify) backend with a PostgreSQL database. Define the database schema with tables for `users`, `properties`, and `projects`. \n- `users` table: id, email, password_hash, subscription_tier. \n- `properties` table: id, user_id (FK), address, city, state, zip, sqft, beds, baths, year_built, property_data_json (for unstructured API data). \n- `projects` table: id, property_id (FK), name (e.g., 'Kitchen Remodel'), status ('planning', 'in_progress', 'complete'), budget, spent. \nImplement RESTful API endpoints for CRUD operations on properties and projects (e.g., `POST /api/projects`, `GET /api/projects`, `GET /api/projects/:id`). Ensure authentication middleware protects all endpoints.",
+        "testStrategy": "Unit test all API endpoints for creating, reading, updating, and deleting projects and properties. Test data validation to ensure required fields are present. Integration tests should verify that a user can only access their own properties and projects (tenancy). Use a tool like Postman or Insomnia for manual API verification.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Develop the Investor Daily Dashboard UI",
+        "description": "Build the main user interface, the 'Investor Daily Dashboard', which provides an at-a-glance view of all active projects. This UI is the primary entry point for the user and must effectively display portfolio status and facilitate quick navigation.",
+        "details": "Using a frontend framework like React or Vue.js, create a dashboard component that fetches and displays a user's projects from the backend API created in Task 1. The dashboard should feature sections as mocked up in the PRD: 'Needs Attention', 'In Progress', and 'Portfolio Summary'. \n- Implement card-based UI for each project, showing key info like address, project name, status, and a progress bar. \n- The 'Portfolio Summary' should aggregate data like total budget and total spent across all projects. \n- Each project card must be a link that navigates to a detailed project view (to be built in a later task). \n- Use a state management library like Redux or Zustand to manage portfolio data.",
+        "testStrategy": "Component tests for the dashboard layout and project cards to ensure they render correctly with mock data. End-to-end tests using Cypress or Playwright to simulate a user logging in, fetching projects from a mock API, and seeing them displayed on the dashboard. Test responsiveness for different screen sizes.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Implement Project Context Persistence and Gemini AI Integration",
+        "description": "Create the core 'context restoration' feature by establishing a system to store detailed, evolving project context and integrating with the Gemini AI suite. This will allow the AI to provide relevant, project-specific responses without needing to be re-prompted with background information.",
+        "details": "Extend the `projects` table with a `context_json` (JSONB) column. This field will store a structured object containing all relevant project details: design choices (e.g., `{'cabinets': 'white shaker'}`), saved inspiration links, contractor notes, room dimensions, and conversation history with the AI. \nCreate a backend service (`/api/projects/:id/ask-ai`) that: \n1. Retrieves the project's `context_json`. \n2. Constructs a detailed prompt for the Gemini API, prepending the context to the user's query. Pseudo-code: `prompt = 'Project Context: ${JSON.stringify(project.context_json)}. User Question: ${user_query}'`. \n3. Sends the prompt to the Gemini API. \n4. Saves the question and AI response back into the `context_json` to maintain a running history. \nOn the frontend, create an 'Ask AI' component within the project detail view.",
+        "testStrategy": "Unit test the prompt construction logic to ensure context is correctly formatted. Integration test the AI endpoint by sending a query for a specific project and verifying that the Gemini API receives the full context. Manually test with various queries to ensure the AI's responses are contextually aware and that the conversation history is correctly saved and reloaded.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Build the 'New Project' Workflow with Address-Based Auto-Population",
+        "description": "Implement the user flow for adding a new property to the portfolio. This includes integrating with a third-party property data API to automatically fetch and populate property details based on a physical address, streamlining project setup.",
+        "details": "Create a 'New Project' wizard in the UI. \nStep 1: User enters a property address. \nStep 2: On submit, the frontend calls a new backend endpoint (e.g., `/api/properties/lookup`). This endpoint takes the address and queries a property data API (e.g., ATTOM Data, CoreLogic). \nStep 3: The backend parses the API response, extracts key data (sqft, bed/bath count, year built), and uses it to create a new record in the `properties` table. \nStep 4: The UI displays the fetched data for user confirmation and allows them to define the initial scope of the remodel project (e.g., select rooms to renovate).",
+        "testStrategy": "Create a mock service for the third-party property data API to test the backend lookup endpoint in isolation. Test the full end-to-end flow: user enters address, data is fetched and displayed, and a new property/project is successfully created in the database. Test edge cases like invalid addresses or addresses not found in the API.",
+        "priority": "high",
+        "dependencies": [
+          1,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Develop Contractor-Ready Spec Package Generation",
+        "description": "Create a feature to generate and export a professional, comprehensive specification package for contractors. This package will serve as the single source of truth for a project, containing all design decisions, materials, and notes.",
+        "details": "Within the detailed project view, create a 'Generate Spec Sheet' feature. This feature will query the project's data, including the `context_json` from Task 3. \n- Backend: Create an endpoint `/api/projects/:id/spec-sheet` that compiles all relevant data into a structured JSON object: dimensions, material specifications (item, product, SKU, quantity), contractor notes, and links to 3D renders/images. \n- Frontend: Use a library like `jsPDF` or `pdf-lib` to take this JSON data and render it into a well-formatted PDF document based on the template in the PRD. The PDF should be downloadable by the user. \n- The UI should allow the user to preview the spec sheet and make minor edits before exporting.",
+        "testStrategy": "Unit test the backend data compilation logic to ensure all necessary project details are included in the spec sheet JSON. On the frontend, test the PDF generation with various data sets to ensure correct formatting, layout, and handling of missing data. Perform visual regression testing on the generated PDF to catch unintended layout changes.",
+        "priority": "high",
+        "dependencies": [
+          1,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Implement ROI Analysis and Budget Tracking Module",
+        "description": "Build the financial management features for each project, including budget tracking and an ROI analysis view. This module will help investors make data-driven decisions by visualizing renovation costs against projected value-add.",
+        "details": "1. **Budget Tracking**: Enhance the `projects` table with columns for `budget_items` (JSONB to store line items like `[{'name': 'Bathroom 1', 'cost': 12000}]`) and `projected_arv`. Update the project detail UI to allow users to add/edit these line items and see the total cost roll up. \n2. **ROI View**: Create a new 'Analysis' tab in the project detail view. This UI will display the data as shown in the PRD's 'Renovation ROI Analysis' mockup. It will calculate and display 'Value Add' (ARV - Purchase Price - Total Cost) and 'Cash-on-Cash ROI' for the planned renovations. \n3. **AI Recommendations**: Integrate with the Gemini service (from Task 3) to provide an AI recommendation. The prompt should include project scope, budget, and market data (e.g., 'Houston'), asking for suggestions to maximize ROI.",
+        "testStrategy": "Unit test the ROI calculation logic with various inputs to ensure accuracy. Test the UI components for adding and editing budget line items. For the AI feature, create test cases with different market scenarios to validate that the recommendations are relevant and sensible. End-to-end test the entire flow from adding budget items to viewing the final ROI analysis.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-12-09T17:05:43.908Z",
+      "updated": "2025-12-09T17:06:25.775Z",
+      "description": "Tasks for persona-investor context"
+    }
+  },
+  "persona-contractor": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Project Creation and Client Design Import",
+        "description": "Enable contractors to create a new project and import a client's RemodelVision design file. This serves as the foundational step for the entire contractor workflow, allowing them to view and assess the client's initial vision.",
+        "details": "Backend: Implement database models for `Project`, `User (Contractor)`, and `Design`. Create a secure API endpoint (e.g., `POST /api/projects/import`) to handle the upload and parsing of design files (JSON, IFC, etc.). Frontend: Develop a project dashboard where contractors can see a list of their projects and a button to initiate a new import. Utilize a 3D rendering library like Three.js or Babylon.js to display the imported client design in a web-based viewer. The initial view should be read-only.",
+        "testStrategy": "Unit test the file parsing logic with valid and malformed design files. Create integration tests that simulate a contractor uploading a design file and verify that the project is created in the database and the 3D model renders correctly in the frontend viewer. Conduct UI testing on the project creation and import flow.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Develop Contractor Annotation and Measurement Layer",
+        "description": "Create a toolset for contractors to add professional annotations, precise measurements, and critical callouts directly onto the imported 3D model. This feature allows them to translate the client's vision into a buildable plan by identifying potential issues and adding construction-specific details.",
+        "details": "Frontend: Extend the 3D viewer developed in Task 1 to support interactive overlays. Implement a toolbar with tools for adding different annotation types as specified in the PRD's 'Visual Callout System' (Warning, Info, Location, Dimension, Trade Note, Cost). Use raycasting to accurately place these annotations on the 3D model's surfaces. Backend: Design and create an `Annotation` table in the database, linked to a `Project`. It should store the annotation's type, 3D position, content, and any associated metadata. Develop RESTful API endpoints for creating, reading, updating, and deleting annotations (`/api/projects/{projectId}/annotations`).",
+        "testStrategy": "Test the creation and placement of each annotation type on various 3D models. Verify that annotations are saved persistently and reloaded correctly when the project is reopened. Write tests to confirm the accuracy of the measurement tool against a model with known dimensions. Ensure annotations remain correctly positioned during camera manipulation (pan, zoom, orbit).",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Implement Trade-Specific Schematic Overlay System",
+        "description": "Build the schematic overlay engine that allows contractors to create, view, and manage distinct layers for different trades (e.g., electrical, plumbing, framing). This is a critical feature for clear communication and coordination with subcontractors.",
+        "details": "Backend: Implement database models based on the `SchematicOverlay` and `OverlayElement` TypeScript interfaces provided in the PRD. The system should support types like 'electrical', 'plumbing', 'hvac', etc. Create API endpoints to manage these overlays (`GET, POST, PUT /api/projects/{projectId}/overlays`). Frontend: Develop a UI panel (e.g., a sidebar with checkboxes) that allows the user to toggle the visibility of each trade-specific overlay. When an overlay is active, its elements (icons, lines, labels) should be rendered on top of the 3D model. This will likely involve managing different 'layers' or 'scenes' within the 3D viewer.",
+        "testStrategy": "For a sample project, add elements to the electrical, plumbing, and framing overlays. Write automated tests to toggle the visibility of each layer and verify that only the correct elements are displayed. Manually test combinations of overlays to ensure they render correctly without visual conflicts. Validate that the data saved to the backend correctly matches the PRD's specified interface.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Create Interactive Proposal Builder with PDF Export",
+        "description": "Develop a proposal generation tool that allows contractors to create detailed, itemized quotes based on the annotated design. The feature must include calculations for labor, materials, overhead, and profit, and export the final document as a professional, client-facing PDF.",
+        "details": "Backend: Create `Proposal` and `LineItem` database models, linked to a `Project`. Implement business logic to calculate subtotals, markups (overhead, profit), and the final total. Use a server-side PDF generation library like Puppeteer (for rendering an HTML template to PDF) or PDFKit to create the proposal document. The PDF should include a snapshot of the annotated 3D model. Frontend: Build the UI as depicted in the 'Proposal Builder' section of the PRD. This includes a table for line items, input fields for costs, and real-time calculation updates. Allow contractors to link annotations from the model to specific line items.",
+        "testStrategy": "Unit test the proposal calculation logic for accuracy. Create an end-to-end test where a user builds a complete proposal, adds several line items, sets overhead/profit margins, and generates a PDF. The resulting PDF must be visually inspected to ensure it matches the PRD's layout, contains the correct data, and includes the 3D model image with annotations.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Build Change Order Management Workflow",
+        "description": "Implement a system for creating and managing change orders. This system must visually demonstrate the difference between the original scope and the requested change, calculate the cost and schedule impact, and track client approval status.",
+        "details": "Backend: Create a `ChangeOrder` model linked to a `Project`. This model will store a description of the change, cost/schedule impact data, and an approval status enum (`pending`, `approved`, `declined`). To handle the visual comparison, implement a versioning system for the project's design and annotation data. When a change order is created, a snapshot of the current state is saved. Frontend: Design the UI shown in the PRD, featuring a side-by-side comparison of the 'Original Design' and 'Requested Change'. This can be achieved using two synchronized 3D viewers or by capturing images of the model state. Implement a form for entering cost/schedule impact and a mechanism to send an approval request to the client via a secure, unique link.",
+        "testStrategy": "Create a project and an approved proposal. Then, initiate a change order. Verify that the 'before' and 'after' states are captured correctly. Test the cost impact calculation. Simulate the client approval workflow by accessing the unique link and approving the change, then verify that the status is updated correctly in the contractor's dashboard.",
+        "priority": "medium",
+        "dependencies": [
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Implement Document Export and Subcontractor Sharing",
+        "description": "Develop functionality for exporting trade-specific documents and sharing view-only versions of the project with subcontractors. This feature is essential for streamlining communication and ensuring all stakeholders have the correct information.",
+        "details": "Backend: Develop a permissions and sharing service. Implement an endpoint that generates a unique, time-limited, view-only token for a specific project view (e.g., only the plumbing overlay). Create exporter modules to generate PDFs of specific schematic views and CSVs for material takeoffs (quantities derived from annotations). Frontend: Add 'Share' and 'Export' buttons within the UI. The 'Share' functionality should open a modal where the contractor can select which trade overlay to share and generate a shareable link. The 'Export' button should allow the user to select a format (e.g., 'Plumbing PDF', 'Material List CSV').",
+        "testStrategy": "Generate a shareable link for the 'Electrical' overlay. Open this link in an incognito browser session to confirm it provides view-only access and that other layers like 'Plumbing' are not visible. Test the PDF export for each trade view, ensuring the output is clean and contains only the relevant information. Test the CSV export to verify it accurately lists materials and quantities.",
+        "priority": "medium",
+        "dependencies": [
+          3,
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-12-09T17:06:37.881Z",
+      "updated": "2025-12-09T17:07:28.545Z",
+      "description": "Tasks for persona-contractor context"
+    }
+  },
+  "persona-designer": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Project Setup and Intake Module",
+        "description": "Develop the initial project creation and data intake interface. This module will capture all necessary information from the designer about the client, space, preferences, and budget, as described in 'Phase 1: Discovery & Programming'.",
+        "details": "Create a multi-step form for project intake. Implement a backend service to store this data. Define the database schema for Projects, Clients, and Rooms. The schema should accommodate client preferences (style, color palette), inspiration images (uploads), budget, timeline, and detailed space analysis (dimensions, existing features, constraints). Use a PostgreSQL database with tables for `projects`, `clients`, `rooms`, and `project_preferences`. The frontend can be built with React and a component library like Material-UI. The backend API will be a RESTful service using Node.js/Express. \n\n```typescript\n// DTO for creating a new project\ninterface CreateProjectDTO {\n  clientName: string;\n  projectName: string;\n  budget: number;\n  timeline: string; // e.g., '2026-06-01'\n  preferences: {\n    styleDirections: DesignStyle[];\n    colorPalette: string[];\n    mustHaves: string[];\n    avoid: string[];\n    inspirationImageUrls: string[];\n  };\n  roomDetails: {\n    name: string;\n    dimensions: { width: number; length: number; height: number };\n    features: string[];\n    constraints: string[];\n  };\n}\n```",
+        "testStrategy": "Unit test the API endpoints for project creation and retrieval (201 Created, 400 Bad Request). On the frontend, use component tests to validate the form fields and data submission. Conduct an end-to-end test by creating a new project via the UI and verifying the data is correctly saved in the database.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "AI-Powered Concept Generation Service",
+        "description": "Build the core backend service that generates multiple design concepts based on the project intake data and a user prompt. This service will interpret design language and produce photorealistic renders with estimated budgets, as outlined in 'Phase 2: Concept Development'.",
+        "details": "Create a microservice that accepts a project ID and a text prompt. This service will query the project data from the database (Task 1). It will then construct a detailed prompt for a generative AI image model. Use a foundation model like Stable Diffusion XL and fine-tune it on a curated dataset of high-end interior designs, categorized by the `DesignStyle` enum from the PRD. The prompt engineering should combine structured data (dimensions, lighting) with descriptive text (style, mood). The service should return 3-5 image URLs (stored in an S3 bucket) along with metadata for each concept: `conceptName` (e.g., 'Japandi Calm'), `estimatedBudget`, and `aiDesignNotes`. \n\n```python\n# Pseudo-code for the generation service\ndef generate_concepts(project_id: int, user_prompt: str):\n  project_data = db.get_project(project_id)\n  \n  # Combine structured data and user prompt into a detailed prompt\n  base_prompt = f\"photorealistic interior render of a {project_data.room.dimensions} living room with {project_data.room.features}, {project_data.preferences.styleDirections[0]} style...\"\n  final_prompt = f\"{base_prompt} {user_prompt}\"\n  \n  concepts = []\n  for i in range(3):\n    image = image_generation_model.run(final_prompt, seed=i)\n    metadata = analyze_image_for_style_and_cost(image)\n    concepts.append({'imageUrl': save_to_s3(image), 'metadata': metadata})\n  \n  return concepts\n```",
+        "testStrategy": "Test the API endpoint with various project data and prompts to ensure it returns the expected number of concepts. Validate that the generated images align with the requested style and features. Create a 'golden set' of prompts and expected image characteristics for regression testing. Monitor API response times to ensure they are under the 5-minute target.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Interactive 3D Concept Viewer with Product Hotspots",
+        "description": "Develop the user interface for viewing and interacting with a selected AI-generated concept. This includes rendering the 2D image in a navigable 3D space and implementing clickable hotspots on key furniture and decor items, as shown in 'Phase 3: Specification & Sourcing'.",
+        "details": "On the frontend, after a user selects a concept from Task 2, use a library like Three.js or Babylon.js to create a simple 3D representation of the room. The AI-generated image will be projected onto the back wall as a backdrop. Use an object detection model (e.g., YOLOv8) to identify the bounding boxes of key items (sofa, table, chair) in the 2D image. Overlay interactive hotspots (e.g., pulsating dots) on these items. Clicking a hotspot will trigger a call to the product specification service (Task 4) with the item's category and image crop.",
+        "testStrategy": "Test the object detection accuracy on a sample set of 100 generated images. Verify that hotspots are correctly placed and clickable. Unit test the 3D scene setup to ensure it loads correctly. Manually test the user interaction across different browsers and screen sizes to ensure a smooth experience.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Product Catalog and AI-Powered Specification Service",
+        "description": "Create a backend service and database to manage a catalog of real-world furniture and finishes. This service will take input from the interactive viewer (Task 3) and suggest actual products that match the style, form, and color of the item in the AI render.",
+        "details": "Design and populate a `products` table in the database. The schema should include fields for `name`, `sku`, `vendor`, `category`, `style`, `dimensions`, `trade_price`, `lead_time`, `material_finish_details`, and `image_url`. Implement a service that uses a visual search model (like OpenAI's CLIP) to find products in the catalog that are visually similar to an image crop of an item from the AI render. The service should return a primary match and several alternatives at different price points, as specified in the PRD. \n\n```javascript\n// API Endpoint: POST /api/products/find-matches\n// Body: { imageCrop: 'base64_string', category: 'sofa', budgetTier: 'medium' }\n// Response: {\n//   primaryMatch: { ...productDetails },\n//   alternatives: [ { ...productDetails }, { ...productDetails } ]\n// }\n```",
+        "testStrategy": "Ingest a sample of 1000 products into the database. Create a test suite that sends 50 different image crops to the matching service and manually grade the relevance of the returned suggestions. Test the API's performance and accuracy. Ensure filtering by price point and category works as expected.",
+        "priority": "high",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Client Presentation Portal and Feedback System",
+        "description": "Build a secure, client-facing portal to present the finalized design concept. The portal will feature photorealistic renders, product details, different lighting conditions, and an integrated commenting system for client feedback, as detailed in 'Phase 4: Client Presentation'.",
+        "details": "Create a separate frontend application or a distinct mode within the main app for clients. This view will be read-only except for feedback features. It will display the hero render, a gallery of specified products with their details (pulled from Task 4), and controls to switch between lighting conditions (e.g., 'Morning', 'Evening'). Implement a commenting feature where clients can click on any part of the hero image to drop a pin and leave a comment. Comments should be stored and linked to the project, visible to the designer. Use JWT for secure, shareable links to the portal.",
+        "testStrategy": "End-to-end test the client workflow: designer generates a share link, opens it in an incognito window (simulating the client), views the presentation, and adds comments. Verify that comments appear correctly in the designer's interface. Test the portal's responsiveness on mobile and tablet devices. Perform security testing to ensure clients cannot access other projects.",
+        "priority": "medium",
+        "dependencies": [
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Budget Tracking and Contractor Spec Sheet Generation",
+        "description": "Implement functionality to automatically track the total cost of specified products against the project budget. Add a feature to generate a downloadable, professional specification sheet for contractor handoff.",
+        "details": "In the main designer interface, display a running total of the `trade_price` for all confirmed products in a project. Compare this total against the initial budget set in Task 1, showing a visual indicator (e.g., progress bar). Create a PDF generation service using a library like `pdf-lib` or `Puppeteer`. This service will compile all specified product details (images, names, SKUs, dimensions, materials, finishes) into a clean, formatted document. The document should have a clear header with project and client information. \n\n**Spec Sheet Layout:**\n- Header: Project Name, Client Name, Date\n- Section per Item (e.g., 'Sofa', 'Coffee Table')\n  - Image\n  - Product Name, Vendor, SKU\n  - Dimensions\n  - Material/Finish Details\n  - Placement Notes (optional)",
+        "testStrategy": "Unit test the budget calculation logic with various product combinations. For the PDF generation, create a snapshot test that compares the output PDF against a known-good template to catch any formatting regressions. Manually verify the generated spec sheets for clarity, accuracy, and professional appearance.",
+        "priority": "medium",
+        "dependencies": [
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-12-09T17:07:41.181Z",
+      "updated": "2025-12-09T17:08:28.879Z",
+      "description": "Tasks for persona-designer context"
+    }
+  }
+}

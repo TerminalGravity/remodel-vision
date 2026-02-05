@@ -1,16 +1,22 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { 
-  PropertyContextSummary, 
-  ProjectConfigSummary, 
-  DesignRevisionSummary, 
+import {
+  PropertyContextSummary,
+  ProjectConfigSummary,
+  DesignRevisionSummary,
   AssetReferenceSummary,
   ProjectConfig,
   PropertyContext,
   DesignRevision,
   AssetReference
 } from '@remodelvision/sdk';
+import {
+  indexedDBStorage,
+  SCHEMA_VERSION,
+  migrateState,
+  partializeState
+} from './persistence';
 
 // State Interfaces
 interface PropertyContextState {
@@ -165,17 +171,25 @@ export const useUnifiedStore = create<UnifiedStore>()(
       }),
     })),
     {
-      name: 'remodel-vision-storage',
-      partialize: (state) => ({
-        // Selectively persist fields
-        currentPropertyId: state.currentPropertyId,
-        properties: state.properties,
-        currentProjectId: state.currentProjectId,
-        projects: state.projects,
-        revisionsByPropertyId: state.revisionsByPropertyId,
-        assets: state.assets
-        // Don't persist UI state or large active data blobs (load them on demand typically, but for prototype we might want to? Task 21 says yes)
-      }),
+      name: 'remodel-vision-unified-storage',
+      version: SCHEMA_VERSION,
+      storage: createJSONStorage(() => indexedDBStorage),
+      partialize: (state) => partializeState(state as unknown as Record<string, unknown>),
+      migrate: (persistedState, version) => {
+        // Handle migration from older schema versions
+        if (version < SCHEMA_VERSION) {
+          console.log(`[UnifiedStore] Migrating from v${version} to v${SCHEMA_VERSION}`);
+          return migrateState(persistedState, version) as typeof persistedState;
+        }
+        return persistedState;
+      },
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error('[UnifiedStore] Hydration error:', error);
+        } else if (state) {
+          console.log('[UnifiedStore] State hydrated successfully');
+        }
+      },
     }
   )
 );

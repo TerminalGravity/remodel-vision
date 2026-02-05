@@ -124,22 +124,22 @@ const PropertyAnnotations = ({ visible }: { visible: boolean }) => {
   return (
     <group>
        <Html position={[10, 2, 10]} center distanceFactor={15}>
-          <div className="bg-blue-600/90 text-white px-2 py-1 rounded text-xs font-mono whitespace-nowrap shadow-lg backdrop-blur">
+          <div className="bg-copper/90 text-background px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap shadow-lg backdrop-blur border border-copper-light/20">
             Property Line
           </div>
        </Html>
        <Html position={[-10, 2, -10]} center distanceFactor={15}>
-          <div className="bg-blue-600/90 text-white px-2 py-1 rounded text-xs font-mono whitespace-nowrap shadow-lg backdrop-blur">
+          <div className="bg-copper/90 text-background px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap shadow-lg backdrop-blur border border-copper-light/20">
              Setback: 10ft
           </div>
        </Html>
        {activePropertyMeta && (
          <Html position={[0, 8, 0]} center distanceFactor={20} zIndexRange={[100, 0]}>
-           <div className="bg-slate-900/80 border border-slate-600 text-white p-2 rounded flex flex-col items-center gap-1 shadow-2xl backdrop-blur">
-             <div className="text-[10px] uppercase text-slate-400 font-bold">Zoning</div>
-             <div className="text-sm font-bold">{activePropertyMeta.zoning}</div>
-             <div className="w-full h-px bg-slate-700 my-1"></div>
-             <div className="text-[10px] text-green-400">Lot: {activePropertyMeta.lotSize}</div>
+           <div className="glass bg-card/90 border border-border text-foreground p-3 rounded-xl flex flex-col items-center gap-1.5 shadow-2xl">
+             <div className="text-[10px] uppercase text-copper font-bold tracking-wider">Zoning</div>
+             <div className="text-sm font-bold font-display">{activePropertyMeta.zoning}</div>
+             <div className="w-full h-px bg-border my-1"></div>
+             <div className="text-[10px] text-copper-light">Lot: {activePropertyMeta.lotSize}</div>
            </div>
          </Html>
        )}
@@ -162,7 +162,7 @@ export const DollhouseViewer = () => {
   }, [timeOfDay]);
 
   return (
-    <div className="w-full h-full bg-gradient-to-b from-sky-900 to-slate-900 relative group overflow-hidden">
+    <div className="w-full h-full bg-gradient-to-b from-background to-card relative group overflow-hidden">
       <Canvas
         shadows
         gl={{ preserveDrawingBuffer: true, antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}
@@ -218,17 +218,17 @@ export const DollhouseViewer = () => {
       {/* Controls Overlay */}
       <div className="absolute top-6 left-6 flex flex-col gap-3">
         {/* View Modes */}
-        <div className="bg-slate-900/90 backdrop-blur border border-slate-700 p-1.5 rounded-lg flex gap-1 shadow-xl">
-           <button 
+        <div className="glass bg-card/90 border border-border p-1.5 rounded-xl flex gap-1 shadow-xl">
+           <button
              onClick={() => setSiteMode(false)}
-             className={`px-3 py-2 rounded text-xs font-medium flex items-center gap-2 transition-colors ${!siteMode ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+             className={`px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-2 transition-all ${!siteMode ? 'bg-copper text-background shadow-lg shadow-copper/25' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'}`}
            >
              <Layers className="w-3 h-3" />
              Interior
            </button>
-           <button 
+           <button
              onClick={() => setSiteMode(true)}
-             className={`px-3 py-2 rounded text-xs font-medium flex items-center gap-2 transition-colors ${siteMode ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+             className={`px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-2 transition-all ${siteMode ? 'bg-copper text-background shadow-lg shadow-copper/25' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'}`}
            >
              <MapIcon className="w-3 h-3" />
              Site Context
@@ -236,29 +236,29 @@ export const DollhouseViewer = () => {
         </div>
 
         {/* Environmental Controls */}
-        <div className="bg-slate-900/90 backdrop-blur border border-slate-700 p-4 rounded-lg text-white shadow-xl min-w-[200px]">
-           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-             <Sun className="w-3 h-3 text-orange-400" />
+        <div className="glass bg-card/90 border border-border p-4 rounded-xl text-foreground shadow-xl min-w-[200px]">
+           <h3 className="text-xs font-bold text-copper uppercase tracking-wider mb-4 flex items-center gap-2">
+             <Sun className="w-3 h-3 text-copper-light" />
              Solar Study
            </h3>
-           
+
            <div className="space-y-4">
              <div>
-               <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+               <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
                  <span>6 AM</span>
                  <span>12 PM</span>
                  <span>8 PM</span>
                </div>
-               <input 
-                 type="range" 
-                 min="6" 
-                 max="20" 
+               <input
+                 type="range"
+                 min="6"
+                 max="20"
                  step="0.5"
                  value={timeOfDay}
                  onChange={(e) => setTimeOfDay(parseFloat(e.target.value))}
-                 className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                 className="w-full h-1 bg-secondary rounded-lg appearance-none cursor-pointer accent-copper"
                />
-               <div className="text-center text-xs font-mono text-orange-400 mt-1">
+               <div className="text-center text-xs font-mono text-copper-light mt-1">
                  {Math.floor(timeOfDay)}:{timeOfDay % 1 === 0 ? '00' : '30'}
                </div>
              </div>
@@ -267,10 +267,10 @@ export const DollhouseViewer = () => {
 
         {/* Layer Toggles */}
         {!siteMode && (
-          <div className="bg-slate-900/90 backdrop-blur border border-slate-700 p-2 rounded-lg text-white shadow-xl">
-             <button 
+          <div className="glass bg-card/90 border border-border p-2 rounded-xl text-foreground shadow-xl">
+             <button
                onClick={() => setShowGrid(!showGrid)}
-               className={`flex items-center gap-2 w-full px-3 py-2 rounded text-xs transition-colors ${showGrid ? 'bg-blue-600/20 text-blue-400' : 'hover:bg-slate-800 text-slate-300'}`}
+               className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs transition-all ${showGrid ? 'bg-copper/20 text-copper' : 'hover:bg-secondary text-muted-foreground'}`}
              >
                <GridIcon className="w-3 h-3" />
                {showGrid ? 'Hide Floor Grid' : 'Show Floor Grid'}
@@ -279,14 +279,14 @@ export const DollhouseViewer = () => {
         )}
 
         {/* Action Button */}
-        <div className="bg-slate-900/90 backdrop-blur border border-slate-700 p-2 rounded-lg text-white shadow-xl mt-2">
-            <button 
+        <div className="glass bg-card/90 border border-border p-2 rounded-xl shadow-xl mt-2">
+            <button
               onClick={() => {
                 setStatus(activeMediaType === 'video' ? AppStatus.GENERATING_VIDEO : AppStatus.GENERATING_IMAGE);
                 addMessage({ role: 'system', content: `Capturing view for ${activeMediaType}...` });
                 setCaptureRequest(true);
               }}
-              className="flex items-center gap-2 w-full px-3 py-2.5 rounded text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white transition-all shadow-lg justify-center"
+              className="flex items-center gap-2 w-full px-4 py-3 rounded-xl text-sm font-bold bg-copper hover:bg-copper-dark text-background transition-all shadow-lg shadow-copper/25 hover:shadow-copper/40 justify-center btn-press"
             >
               <Camera className="w-4 h-4" />
               Visualize This View
@@ -296,8 +296,8 @@ export const DollhouseViewer = () => {
       
       {/* Compass / Orientation */}
       <div className="absolute top-6 right-6 pointer-events-none">
-         <div className="bg-black/50 backdrop-blur px-3 py-1.5 rounded-full border border-white/10 text-xs text-white/70 flex items-center gap-2">
-           <Compass className="w-3 h-3" />
+         <div className="glass bg-card/80 px-3 py-1.5 rounded-full border border-border text-xs text-muted-foreground flex items-center gap-2">
+           <Compass className="w-3 h-3 text-copper" />
            <span>N 0°</span>
          </div>
       </div>

@@ -70,7 +70,7 @@ export const DollhouseScene = () => {
           <meshStandardMaterial color="#475569" />
         </mesh>
         <Html position={[0, 5, 0]} center>
-          <div className="bg-slate-900/80 text-white px-3 py-1 rounded text-xs backdrop-blur border border-slate-700">
+          <div className="glass bg-card/90 text-muted-foreground px-4 py-2 rounded-xl text-xs backdrop-blur border border-border font-medium">
             No Property Data Loaded
           </div>
         </Html>
@@ -137,10 +137,10 @@ export const DollhouseScene = () => {
 
             <Html position={[0, 0, 0]} center>
             <div className="flex flex-col items-center">
-                <div className="bg-blue-600 text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-lg">
+                <div className="bg-copper text-background px-4 py-2 rounded-full text-sm font-bold shadow-lg shadow-copper/30">
                 {details?.livingArea?.value?.toLocaleString()} sqft
                 </div>
-                <div className="mt-1 bg-slate-900/80 text-xs text-slate-300 px-2 py-1 rounded backdrop-blur">
+                <div className="mt-2 glass bg-card/90 text-xs text-muted-foreground px-3 py-1.5 rounded-lg border border-border">
                 {details?.bedrooms} Bed / {details?.bathrooms} Bath
                 </div>
             </div>

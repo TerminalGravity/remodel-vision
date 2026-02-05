@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { ChatMessage, AppStatus, GeneratedResult, Project, Notification, AppViewMode, PropertyMeta, WorkspaceView, GenerationConfig, MediaType } from '../types';
 import { geminiService } from '../services/geminiService';
-import { fetchPropertyData, isPropertyServiceAvailable } from '../services/property';
-import type { PropertyContext } from '../types/property';
+import { fetchPropertyData, isPropertyServiceAvailable, legacyMetaToContext } from '../services/property';
+import { generateRoomsFromDetails } from '../services/property/roomGenerator';
+import type { PropertyContext, PropertyMeta as LegacyPropertyMeta } from '../types/property';
 
 interface AppState {
   // Navigation
@@ -15,6 +16,7 @@ interface AppState {
   projects: Project[];
   activeProjectId: string;
   setActiveProject: (id: string) => void;
+  addProject: (project: Project) => void;
   updateProject: (projectId: string, updates: Partial<Project>) => void;
   updateProjectConfig: (projectId: string, updates: Partial<Project['config']>) => void;
   
@@ -23,6 +25,9 @@ interface AppState {
   activePropertyContext: PropertyContext | null;
   propertyFetchStatus: 'idle' | 'loading' | 'success' | 'error';
   propertyFetchErrors: Array<{ source: string; error: string }>;
+  isProcessingFloorPlan: boolean;
+  setProcessingFloorPlan: (processing: boolean) => void;
+  updatePropertyRooms: (rooms: import('../types/property').RoomContext[]) => void;
   fetchPropertyMeta: (address: string) => Promise<void>;
   fetchPropertyContext: (address: string) => Promise<void>;
   updatePropertyMeta: (meta: PropertyMeta) => void;
@@ -60,6 +65,12 @@ interface AppState {
   addGeneratedResult: (result: GeneratedResult) => void;
   removeGeneratedResult: (id: string) => void;
   setActiveResult: (id: string | null) => void;
+
+  // Reference Images for Generation
+  referenceImages: Record<string, string>;  // element name → base64
+  addReferenceImage: (element: string, imageData: string) => void;
+  removeReferenceImage: (element: string) => void;
+  clearReferenceImages: () => void;
 
   // Project "Truth"
   projectContext: string;
@@ -147,7 +158,8 @@ export const useStore = create<AppState>((set, get) => ({
       activePropertyMeta: null, // Reset while fetching
       activePropertyContext: null,
       propertyFetchStatus: 'idle',
-      propertyFetchErrors: []
+      propertyFetchErrors: [],
+      referenceImages: {} // Reset reference images for new project
     });
 
     get().addNotification('info', `Opened workspace: ${project?.name}`);
@@ -162,6 +174,11 @@ export const useStore = create<AppState>((set, get) => ({
       }
     }
   },
+
+  addProject: (project) => set((state) => ({
+    projects: [project, ...state.projects],
+    activeProjectId: project.id
+  })),
 
   updateProject: (projectId, updates) => set((state) => ({
     projects: state.projects.map(p => 
@@ -183,18 +200,64 @@ export const useStore = create<AppState>((set, get) => ({
   activePropertyContext: null,
   propertyFetchStatus: 'idle',
   propertyFetchErrors: [],
+  isProcessingFloorPlan: false,
+  setProcessingFloorPlan: (processing) => set({ isProcessingFloorPlan: processing }),
+  updatePropertyRooms: (rooms) => set((state) => {
+    if (!state.activePropertyContext) return {};
+    return {
+      activePropertyContext: {
+        ...state.activePropertyContext,
+        rooms: rooms
+      }
+    };
+  }),
 
   fetchPropertyMeta: async (address) => {
     try {
+      set({ propertyFetchStatus: 'loading' });
+      
       // Use Thinking mode for deeper analysis
       const meta = await geminiService.getPropertyDetails(address, get().generationConfig.thinkingMode);
-      set({ activePropertyMeta: meta });
+      
+      // Convert to full context for compatibility
+      const partialContext = legacyMetaToContext(meta, address);
+      
+      // Generate a mock ID and metadata
+      const now = new Date().toISOString();
+      const context: PropertyContext = {
+       id: `prop_ai_${Date.now()}`,
+       version: 1,
+       createdAt: now,
+       updatedAt: now,
+       ...partialContext as any, // Cast because helper returns partial
+       // Ensure required fields that might be missing from partial are present
+       sources: [{
+         source: 'ai-estimate',
+         confidence: 0.6,
+         scrapedAt: now,
+         fields: Object.keys(meta)
+       }],
+       metadata: {
+         completeness: 50,
+         dataQuality: 'estimated',
+         confidence: { overall: 0.6 }
+       },
+       rooms: partialContext.details ? generateRoomsFromDetails(partialContext.details) : []
+      };
+
+      set({ 
+        activePropertyMeta: meta,
+        activePropertyContext: context,
+        propertyFetchStatus: 'success'
+      });
+      
       get().addMessage({
         role: 'system',
-        content: `**Property Intelligence Loaded** (AI Estimated)\nZoning: ${meta.zoning}\nYear Built: ${meta.yearBuilt}\nLot: ${meta.lotSize}`
+        content: `**Property Intelligence Loaded** (AI Estimated)\nZoning: ${meta.zoning}\nYear Built: ${meta.yearBuilt}\nLot: ${meta.lotSize}\n\n*Note: Public records unavailable. Using AI estimation.*`
       });
     } catch (e) {
       console.error(e);
+      set({ propertyFetchStatus: 'error', propertyFetchErrors: [{ source: 'system', error: String(e) }] });
     }
   },
 
@@ -320,6 +383,17 @@ export const useStore = create<AppState>((set, get) => ({
     activeResultId: state.activeResultId === id ? null : state.activeResultId
   })),
   setActiveResult: (id) => set({ activeResultId: id }),
+
+  // Reference Images
+  referenceImages: {},
+  addReferenceImage: (element, imageData) => set((state) => ({
+    referenceImages: { ...state.referenceImages, [element]: imageData }
+  })),
+  removeReferenceImage: (element) => set((state) => {
+    const { [element]: _, ...rest } = state.referenceImages;
+    return { referenceImages: rest };
+  }),
+  clearReferenceImages: () => set({ referenceImages: {} }),
 
   projectContext: "",
   updateProjectContext: (info) => set((state) => ({ projectContext: state.projectContext + "\n" + info })),
